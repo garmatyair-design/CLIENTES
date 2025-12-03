@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard — CRM Proyectos</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:linear-gradient(90deg,#fff,#f8fbff);border-bottom:1px solid #e6eefc">
+    <div>
+      <h1 style="margin:0;color:#2563EB">Dashboard</h1>
+      <p style="margin:2px 0 0;color:#6B7280;font-size:13px">KPIs y gráficas</p>
+    </div>
+    <div>
+      <a href="index.html" style="display:inline-block;padding:8px 12px;border-radius:8px;background:#FBBF24;color:#0f172a;text-decoration:none;font-weight:700">Volver</a>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:1200px;margin:22px auto;padding:0 18px">
+    <section style="background:white;padding:15px;margin-bottom:20px;border-radius:8px;box-shadow:0 0 5px #ccc">
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:160px;padding:12px;background:#fff;border-radius:8px;border-left:6px solid #2563EB">
+          <div style="font-size:13px;color:#2563EB">Total Clientes</div>
+          <div id="kpi_total_clients" style="font-weight:700;font-size:20px">0</div>
+        </div>
+        <div style="flex:1;min-width:160px;padding:12px;background:#fff;border-radius:8px;border-left:6px solid #FBBF24">
+          <div style="font-size:13px;color:#2563EB">Total Proyectos</div>
+          <div id="kpi_total_projects" style="font-weight:700;font-size:20px">0</div>
+        </div>
+        <div style="flex:1;min-width:160px;padding:12px;background:#fff;border-radius:8px;border-left:6px solid #2563EB">
+          <div style="font-size:13px;color:#2563EB">Ventas Ganadas</div>
+          <div id="kpi_ventas" style="font-weight:700;font-size:20px">$0.00</div>
+        </div>
+        <div style="flex:1;min-width:160px;padding:12px;background:#fff;border-radius:8px;border-left:6px solid #FBBF24">
+          <div style="font-size:13px;color:#2563EB">Monto Probable</div>
+          <div id="kpi_probable" style="font-weight:700;font-size:20px">$0.00</div>
+        </div>
+        <div style="flex:1;min-width:160px;padding:12px;background:#fff;border-radius:8px;border-left:6px solid #2563EB">
+          <div style="font-size:13px;color:#2563EB">Ticket Promedio</div>
+          <div id="kpi_ticket" style="font-weight:700;font-size:20px">$0.00</div>
+        </div>
+        <div style="flex:1;min-width:160px;padding:12px;background:#fff;border-radius:8px;border-left:6px solid #FBBF24">
+          <div style="font-size:13px;color:#2563EB">Conversión</div>
+          <div id="kpi_conversion" style="font-weight:700;font-size:20px">0%</div>
+        </div>
+      </div>
+    </section>
+
+    <section style="background:white;padding:12px;margin-bottom:20px;border-radius:8px;box-shadow:0 0 5px #ccc">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <div>
+          <label>Filtrar por cliente</label><br/>
+          <select id="dash_filter_client" style="padding:8px;border-radius:6px;border:1px solid #e6eefc"></select>
+        </div>
+        <div>
+          <label>Filtrar por estatus</label><br/>
+          <select id="dash_filter_status" style="padding:8px;border-radius:6px;border:1px solid #e6eefc">
+            <option value="">Todos</option>
+            <option value="activo">Activo</option>
+            <option value="proceso">En proceso</option>
+            <option value="negociacion">Negociación</option>
+            <option value="ganado">Ganado</option>
+            <option value="cerrado">Cerrado</option>
+            <option value="cancelado">Cancelado</option>
+            <option value="perdido">Perdido</option>
+          </select>
+        </div>
+        <div style="margin-left:auto">
+          <button id="dash_export" style="padding:8px 12px;background:#FBBF24;border:none;border-radius:6px;font-weight:700;cursor:pointer">Exportar todo a Excel</button>
+        </div>
+      </div>
+    </section>
+
+    <section style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+      <div style="background:white;padding:12px;border-radius:8px;box-shadow:0 0 5px #ccc">
+        <h3 style="margin-top:0">Montos por Proyecto</h3>
+        <canvas id="chart_montos" height="220"></canvas>
+      </div>
+
+      <div style="background:white;padding:12px;border-radius:8px;box-shadow:0 0 5px #ccc">
+        <h3 style="margin-top:0">Proyectos por Estatus</h3>
+        <canvas id="chart_estatus" height="220"></canvas>
+      </div>
+    </section>
+
+    <section style="margin-top:18px;background:white;padding:12px;border-radius:8px;box-shadow:0 0 5px #ccc">
+      <h3 style="margin-top:0">Proyectos por Cliente (Top 10)</h3>
+      <canvas id="chart_por_cliente" height="120"></canvas>
+    </section>
+
+  </main>
+
+  <!-- libs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <script>
+    (function(){
+      const KEY_CLIENTS = 'crm_clients_v2';
+      const KEY_PROJECTS = 'crm_projects_v2';
+      let clients = JSON.parse(localStorage.getItem(KEY_CLIENTS) || '[]');
+      let projects = JSON.parse(localStorage.getItem(KEY_PROJECTS) || '[]');
+
+      const el_kpi_total_clients = document.getElementById('kpi_total_clients');
+      const el_kpi_total_projects = document.getElementById('kpi_total_projects');
+      const el_kpi_ventas = document.getElementById('kpi_ventas');
+      const el_kpi_probable = document.getElementById('kpi_probable');
+      const el_kpi_ticket = document.getElementById('kpi_ticket');
+      const el_kpi_conversion = document.getElementById('kpi_conversion');
+
+      const filterClient = document.getElementById('dash_filter_client');
+      const filterStatus = document.getElementById('dash_filter_status');
+      const dashExport = document.getElementById('dash_export');
+
+      const ctxMontos = document.getElementById('chart_montos').getContext('2d');
+      const ctxEstatus = document.getElementById('chart_estatus').getContext('2d');
+      const ctxPorCliente = document.getElementById('chart_por_cliente').getContext('2d');
+
+      let chartMontos = null, chartEstatus = null, chartPorCliente = null;
+
+      function loadData(){
+        clients = JSON.parse(localStorage.getItem(KEY_CLIENTS) || '[]');
+        projects = JSON.parse(localStorage.getItem(KEY_PROJECTS) || '[]');
+      }
+
+      function renderFilters(){
+        filterClient.innerHTML = '<option value="">Todos</option>';
+        clients.forEach(c => {
+          const o = document.createElement('option');
+          o.value = c.id; o.textContent = c.nombre;
+          filterClient.appendChild(o);
+        });
+      }
+
+      function computeKPIs(filteredProjects){
+        const totalClients = clients.length;
+        const totalProjects = projects.length;
+        const won = filteredProjects.filter(p => p.estatus === 'ganado' || p.estatus === 'cerrado').reduce((s,p)=> s + Number(p.amount||0), 0);
+        const probable = filteredProjects.filter(p => p.estatus === 'proceso' || p.estatus === 'negociacion').reduce((s,p)=> s + Number(p.amount||0), 0);
+        const totalAmount = filteredProjects.reduce((s,p)=> s + Number(p.amount||0), 0);
+        const ticket = filteredProjects.length ? (totalAmount / filteredProjects.length) : 0;
+        const conversion = projects.length ? ((projects.filter(p=>p.estatus==='ganado' || p.estatus==='cerrado').length / projects.length) * 100) : 0;
+
+        return { totalClients, totalProjects, won, probable, ticket, conversion };
+      }
+
+      function updateKPIElements(kpi){
+        el_kpi_total_clients.textContent = kpi.totalClients;
+        el_kpi_total_projects.textContent = kpi.totalProjects;
+        el_kpi_ventas.textContent = '$' + Number(kpi.won||0).toLocaleString(undefined,{minimumFractionDigits:2});
+        el_kpi_probable.textContent = '$' + Number(kpi.probable||0).toLocaleString(undefined,{minimumFractionDigits:2});
+        el_kpi_ticket.textContent = '$' + Number(kpi.ticket||0).toFixed(2);
+        el_kpi_conversion.textContent = Number(kpi.conversion||0).toFixed(1) + '%';
+      }
+
+      function filterProjects(){
+        const fc = filterClient.value;
+        const fs = filterStatus.value;
+        return projects.filter(p => {
+          if (fc && p.clientId !== fc) return false;
+          if (fs && p.estatus !== fs) return false;
+          return true;
+        });
+      }
+
+      function drawCharts(filtered){
+        const labels = filtered.map(p => p.nombre);
+        const data = filtered.map(p => Number(p.amount||0));
+        if(chartMontos) chartMontos.destroy();
+        chartMontos = new Chart(ctxMontos, {
+          type: 'bar',
+          data: { labels, datasets: [{ label:'Monto', data, backgroundColor: '#FBBF24' }] },
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+        });
+
+        const statuses = ['activo','proceso','negociacion','ganado','cerrado','cancelado','perdido'];
+        const counts = statuses.map(s => filtered.filter(p => p.estatus === s).length);
+        if(chartEstatus) chartEstatus.destroy();
+        chartEstatus = new Chart(ctxEstatus, {
+          type:'doughnut',
+          data:{ labels: statuses, datasets:[{ data: counts, backgroundColor:['#2563EB','#42a5f5','#90caf9','#4caf50','#8bc34a','#ffb300','#ef4444'] }] },
+          options:{responsive:true,maintainAspectRatio:false}
+        });
+
+        const byClient = {};
+        filtered.forEach(p => { byClient[p.clientId] = (byClient[p.clientId]||0) + Number(p.amount||0); });
+        const arr = Object.entries(byClient).map(([id,total]) => ({ id, total, name: (clients.find(c=>c.id===id)||{nombre:'Sin cliente'}).nombre }))
+                      .sort((a,b)=>b.total-a.total).slice(0,10);
+        if(chartPorCliente) chartPorCliente.destroy();
+        chartPorCliente = new Chart(ctxPorCliente, {
+          type:'bar',
+          data:{ labels: arr.map(a=>a.name), datasets:[{ label:'Monto', data: arr.map(a=>a.total), backgroundColor:'#2563EB' }] },
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}
+        });
+      }
+
+      function exportAll() {
+        if (typeof XLSX === 'undefined') { alert('XLSX library no cargada'); return; }
+        const wb = XLSX.utils.book_new();
+        loadData();
+        const clientsData = clients.map(c => ({ ID: c.id, Nombre: c.nombre, Tipo: c.tipo }));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(clientsData), 'Clientes');
+
+        const projectsData = projects.map(p => {
+          const client = clients.find(c => c.id === p.clientId) || { nombre:'Sin cliente', tipo:'1' };
+          return { ID: p.id, ClienteID: p.clientId, Cliente: client.nombre, Proyecto: p.nombre, Monto: p.amount, Estatus: p.estatus, Probabilidad: p.probabilidad, Comision: (client.tipo==='2'?0.015:0.01)*Number(p.amount||0) };
+        });
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(projectsData), 'Proyectos');
+
+        const ventas = projects.filter(p => p.estatus === 'ganado' || p.estatus === 'cerrado').reduce((s,p)=>s+Number(p.amount||0),0);
+        const kpi = [{ TotalClientes: clients.length, TotalProyectos: projects.length, VentasGanadas: ventas, TicketPromedio: projects.length ? (projects.reduce((s,p)=>s+Number(p.amount||0),0)/projects.length):0 }];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(kpi), 'KPIs');
+
+        XLSX.writeFile(wb, 'crm_proyectos_dashboard.xlsx');
+      }
+
+      function refreshAll() {
+        loadData();
+        renderFilters();
+        const filtered = filterProjects();
+        const kpi = computeKPIs(filtered);
+        updateKPIElements(kpi);
+        drawCharts(filtered);
+      }
+
+      filterClient.addEventListener('change', refreshAll);
+      filterStatus.addEventListener('change', refreshAll);
+      dashExport.addEventListener('click', exportAll);
+
+      window.addEventListener('storage', () => { loadData(); refreshAll(); });
+
+      // initial
+      function init(){
+        loadData();
+        renderFilters();
+        refreshAll();
+      }
+      init();
+
+      // expose for debug
+      window._crm_dashboard_refresh = refreshAll;
+    })();
+  </script>
+</body>
+</html>
