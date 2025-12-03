@@ -614,3 +614,52 @@ actualizarDashboard();
 applyFiltersAndSearch();
 
 /* ---------- End of file ---------- */
+// ------------------------------
+// EXPORTAR A EXCEL
+// ------------------------------
+function exportarExcel() {
+  // Crear libro
+  const wb = XLSX.utils.book_new();
+
+  // CLIENTES
+  const clientesData = clientes.map(c => ({
+    ID: c.idCliente,
+    Nombre: c.nombre,
+    Tipo: c.tipoCliente
+  }));
+  const clientesSheet = XLSX.utils.json_to_sheet(clientesData);
+  XLSX.utils.book_append_sheet(wb, clientesSheet, "Clientes");
+
+  // PROYECTOS
+  const proyectosData = proyectos.map(p => ({
+    ID: p.idProyecto,
+    Cliente: obtenerNombreCliente(p.idCliente),
+    Proyecto: p.nombre,
+    Monto: p.monto,
+    Estatus: p.estatus,
+    Probabilidad: p.probabilidad,
+    TipoCliente: p.tipoCliente,
+    Comision: p.comision
+  }));
+  const proyectosSheet = XLSX.utils.json_to_sheet(proyectosData);
+  XLSX.utils.book_append_sheet(wb, proyectosSheet, "Proyectos");
+
+  // KPIs
+  const kpiData = [{
+    TotalClientes: clientes.length,
+    TotalProyectos: proyectos.length,
+    VentasGanadas: proyectos.filter(p => p.estatus === "ganado").reduce((a,b)=>a+Number(b.monto),0),
+    Activos: proyectos.filter(p => p.estatus === "activo").length,
+    Probables: proyectos.filter(p => p.estatus === "proceso" || p.estatus === "negociacion").length,
+    Perdidos: proyectos.filter(p => p.estatus === "cancelado" || p.estatus === "perdido").length,
+    TicketPromedio: (proyectos.length>0) 
+      ? proyectos.reduce((a,b)=>a+Number(b.monto),0) / proyectos.length 
+      : 0
+  }];
+
+  const kpiSheet = XLSX.utils.json_to_sheet(kpiData);
+  XLSX.utils.book_append_sheet(wb, kpiSheet, "KPIs");
+
+  // Descargar archivo
+  XLSX.writeFile(wb, "crm_proyectos.xlsx");
+}
