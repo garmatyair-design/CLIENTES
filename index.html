@@ -1,44 +1,52 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CRM Proyectos — Mini Sistema</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8" />
+    <title>Mini CRM</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="header">
-    <div class="header-left">
-      <h1>CRM Proyectos</h1>
-      <p class="subtitle">App moderna — azul / amarillo — CRUD completo</p>
+
+  <header style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:linear-gradient(90deg,#fff,#f8fbff);border-bottom:1px solid #e6eefc">
+    <div>
+      <h1 style="margin:0;color:#2563EB">CRM Proyectos</h1>
+      <p style="margin:2px 0 0;color:#6B7280;font-size:13px">Mini sistema — azul / amarillo</p>
     </div>
-    <div class="header-actions">
-      <input id="searchInput" placeholder="Buscar clientes o proyectos..." class="search" />
-      <button id="openAddClient" class="btn btn-yellow">+ Cliente</button>
-      <button id="openAddProject" class="btn btn-blue">+ Proyecto</button>
+
+    <div>
+      <a href="dashboard.html" id="openDashboardBtn" style="display:inline-block;padding:8px 12px;border-radius:8px;background:#2563EB;color:#fff;text-decoration:none;font-weight:600">Ver Dashboard</a>
     </div>
   </header>
 
-  <main class="container">
+  <main class="container" style="max-width:1200px;margin:22px auto;padding:0 18px">
 
-    <!-- DASHBOARD -->
-    <section class="grid cards" id="dashboardCards">
-      <!-- cards rendered by JS -->
+    <!-- AGREGAR CLIENTE -->
+    <section style="background:white;padding:15px;margin-bottom:20px;border-radius:8px;box-shadow:0 0 5px #ccc">
+      <h2>Agregar Cliente</h2>
+      <form id="clientForm">
+        <input type="text" id="clientName" placeholder="Nombre del cliente" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc" />
+        <select id="clientType" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc">
+          <option value="1">Tipo 1 (1%)</option>
+          <option value="2">Tipo 2 (1.5%)</option>
+        </select>
+        <button type="submit" style="width:100%;padding:10px;background:#FBBF24;border:none;border-radius:6px;font-weight:700;cursor:pointer">Guardar Cliente</button>
+      </form>
     </section>
 
-    <!-- CONTROLS -->
-    <section class="controls">
-      <div class="control">
-        <label>Filtrar por Cliente</label>
-        <select id="filterClient">
-          <option value="">Todos los clientes</option>
+    <!-- AGREGAR PROYECTO -->
+    <section style="background:white;padding:15px;margin-bottom:20px;border-radius:8px;box-shadow:0 0 5px #ccc">
+      <h2>Agregar Proyecto</h2>
+      <form id="projectForm">
+        <select id="projectClient" required style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc">
+          <option value="">Selecciona un cliente</option>
         </select>
-      </div>
 
-      <div class="control">
-        <label>Filtrar por Estatus</label>
-        <select id="filterStatus">
-          <option value="">Todos los estatus</option>
+        <input type="text" id="projectName" placeholder="Nombre del proyecto" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc" />
+
+        <input type="number" id="projectAmount" placeholder="Monto del proyecto" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc" />
+
+        <select id="projectStatus" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc">
           <option value="activo">Activo</option>
           <option value="proceso">En proceso</option>
           <option value="negociacion">Negociación</option>
@@ -47,188 +55,58 @@
           <option value="cancelado">Cancelado</option>
           <option value="perdido">Perdido</option>
         </select>
-      </div>
 
-      <div class="control inline">
-        <label>Mostrar</label>
-        <select id="viewMode">
-          <option value="both">Clientes + Proyectos</option>
-          <option value="clients">Solo Clientes</option>
-          <option value="projects">Solo Proyectos</option>
-        </select>
-      </div>
+        <input type="number" id="projectProb" placeholder="Probabilidad (%)" value="100" min="0" max="100" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc" />
+
+        <button type="submit" style="width:100%;padding:10px;background:#2563EB;color:white;border:none;border-radius:6px;font-weight:700;cursor:pointer">Guardar Proyecto</button>
+      </form>
     </section>
 
-    <!-- TABLES -->
-    <section id="mainViews" class="grid two-cols">
-      <div class="panel" id="clientsPanel">
-        <div class="panel-header">
-          <h2>Clientes</h2>
-          <div class="panel-actions">
-            <button id="exportClients" class="link">Exportar JSON</button>
-            <button id="importClientsBtn" class="link">Importar</button>
-            <input id="importClientsFile" type="file" accept="application/json" style="display:none"/>
-          </div>
-        </div>
-        <table class="table" id="clientsTable">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Tipo</th>
-              <th># Proyectos</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-
-      <div class="panel" id="projectsPanel">
-        <div class="panel-header">
-          <h2>Proyectos</h2>
-          <div class="panel-actions">
-            <button id="exportProjects" class="link">Exportar JSON</button>
-            <button id="importProjectsBtn" class="link">Importar</button>
-            <input id="importProjectsFile" type="file" accept="application/json" style="display:none"/>
-          </div>
-        </div>
-        <table class="table" id="projectsTable">
-          <thead>
-            <tr>
-              <th>Proyecto</th>
-              <th>Cliente</th>
-              <th>Monto</th>
-              <th>Estatus</th>
-              <th>Prob %</th>
-              <th>Comisión</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
+    <!-- LISTA CLIENTES -->
+    <section style="background:white;padding:15px;margin-bottom:20px;border-radius:8px;box-shadow:0 0 5px #ccc">
+      <h2>Clientes</h2>
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:#f8fbff">
+            <th style="text-align:left;padding:10px">Cliente</th>
+            <th style="text-align:left;padding:10px">Tipo</th>
+            <th style="text-align:left;padding:10px">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="clientList"></tbody>
+      </table>
     </section>
-<!-- DASHBOARD KPI -->
-<section id="dashboard" style="margin-top:40px;">
-    <h2>Dashboard de KPIs</h2>
 
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <h3>Total Clientes</h3>
-            <p id="kpiTotalClientes">0</p>
-        </div>
+    <!-- LISTA PROYECTOS -->
+    <section style="background:white;padding:15px;margin-bottom:20px;border-radius:8px;box-shadow:0 0 5px #ccc">
+      <h2>Proyectos</h2>
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:#f8fbff">
+            <th style="text-align:left;padding:10px">Proyecto</th>
+            <th style="text-align:left;padding:10px">Cliente</th>
+            <th style="text-align:left;padding:10px">Monto</th>
+            <th style="text-align:left;padding:10px">Estatus</th>
+            <th style="text-align:left;padding:10px">Prob %</th>
+            <th style="text-align:left;padding:10px">Comisión</th>
+            <th style="text-align:left;padding:10px">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="projectList"></tbody>
+      </table>
+    </section>
 
-        <div class="kpi-card">
-            <h3>Total Proyectos</h3>
-            <p id="kpiTotalProyectos">0</p>
-        </div>
+    <!-- Export all (clientes + proyectos + KPIs) -->
+    <section style="text-align:right;margin-bottom:40px">
+      <button id="exportAllBtn" style="padding:10px 14px;background:#FBBF24;border:none;border-radius:6px;font-weight:700;cursor:pointer">Exportar todo a Excel</button>
+    </section>
 
-        <div class="kpi-card">
-            <h3>Ventas Ganadas</h3>
-            <p id="kpiVentas">0</p>
-        </div>
-
-        <div class="kpi-card">
-            <h3>Monto Probable</h3>
-            <p id="kpiProbable">0</p>
-        </div>
-
-        <div class="kpi-card">
-            <h3>Ticket Promedio</h3>
-            <p id="kpiTicket">0</p>
-        </div>
-
-        <div class="kpi-card">
-            <h3>% Conversión</h3>
-            <p id="kpiConversion">0%</p>
-        </div>
-    </div>
-
-    <hr>
-
-    <h3 style="margin-top:20px;">Gráficas</h3>
-    <canvas id="chartMontos" height="120"></canvas>
-    <canvas id="chartEstatus" height="120" style="margin-top:30px;"></canvas>
-
-    <br><br>
-    <button id="exportExcel" style="padding:10px 15px; background:#0d47a1; color:white; border:none;">
-        Exportar a Excel
-    </button>
-</section>
-
-<!-- Librería Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- Librería SheetJS (Excel) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-    
   </main>
 
-  <!-- MODALES -->
-  <div id="modalBackdrop" class="modal-backdrop hidden"></div>
+  <!-- SheetJS (XLSX) - required for export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  <div id="modalClient" class="modal hidden">
-    <h3 id="modalClientTitle">Agregar Cliente</h3>
-    <form id="clientForm" class="form">
-      <label>Nombre</label>
-      <input id="clientName" required />
-      <label>Tipo</label>
-      <select id="clientType">
-        <option value="1">Tipo 1 (1%)</option>
-        <option value="2">Tipo 2 (1.5%)</option>
-      </select>
-      <div class="form-row">
-        <button type="submit" class="btn btn-blue">Guardar</button>
-        <button type="button" id="cancelClient" class="btn btn-ghost">Cancelar</button>
-      </div>
-    </form>
-  </div>
-
-  <div id="modalProject" class="modal hidden">
-    <h3 id="modalProjectTitle">Agregar Proyecto</h3>
-    <form id="projectForm" class="form">
-      <label>Cliente</label>
-      <select id="projectClientSelect" required>
-        <option value="">Selecciona un cliente</option>
-      </select>
-
-      <label>Nombre proyecto</label>
-      <input id="projectNameInput" required />
-
-      <label>Monto</label>
-      <input id="projectMontoInput" type="number" min="0" step="0.01" required />
-
-      <label>Posiciones</label>
-      <input id="projectPosInput" type="number" min="0" step="1" />
-
-      <label>Estatus</label>
-      <select id="projectStatusSelect">
-        <option value="activo">Activo</option>
-        <option value="proceso">En proceso</option>
-        <option value="negociacion">Negociación</option>
-        <option value="ganado">Ganado</option>
-        <option value="cerrado">Cerrado</option>
-        <option value="cancelado">Cancelado</option>
-        <option value="perdido">Perdido</option>
-      </select>
-
-      <button onclick="exportarExcel()" 
-  class="px-4 py-2 bg-yellow-500 text-white rounded-md font-semibold">
-  Exportar a Excel
-</button>
-
-      <label>Probabilidad (%)</label>
-      <input id="projectProbInput" type="number" min="0" max="100" value="100" />
-
-      <div class="form-row">
-        <button type="submit" class="btn btn-blue">Guardar</button>
-        <button type="button" id="cancelProject" class="btn btn-ghost">Cancelar</button>
-      </div>
-    </form>
-  </div>
-
-  <!-- SCRIPTS -->
+  <!-- Main app script -->
   <script src="js-app.js"></script>
 </body>
 </html>
