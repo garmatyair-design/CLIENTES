@@ -478,6 +478,137 @@ function renderAll(){
 
 /* ---------- Initial render ---------- */
 renderAll();
+/* ==================================================================== */
+/* ===================== DASHBOARD Y KPI =============================== */
+/* ==================================================================== */
+
+let chartMontos = null;
+let chartEstatus = null;
+
+function actualizarDashboard() {
+    const clientes = JSON.parse(localStorage.getItem("clientes")) || [];
+    const proyectos = JSON.parse(localStorage.getItem("proyectos")) || [];
+
+    const totalClientes = clientes.length;
+    const totalProyectos = proyectos.length;
+
+    const ventas = proyectos
+        .filter(p => p.estatus === "ganado" || p.estatus === "cerrado")
+        .reduce((acc, p) => acc + Number(p.monto), 0);
+
+    const probable = proyectos
+        .filter(p => p.estatus === "proceso" || p.estatus === "negociación")
+        .reduce((acc, p) => acc + Number(p.monto), 0);
+
+    const ticket =
+        totalProyectos > 0 ? (ventas / totalProyectos).toFixed(2) : 0;
+
+    const conversion =
+        totalProyectos > 0
+            ? ((proyectos.filter(p => p.estatus === "ganado").length /
+                totalProyectos) *
+                100).toFixed(1)
+            : 0;
+
+    document.getElementById("kpiTotalClientes").textContent = totalClientes;
+    document.getElementById("kpiTotalProyectos").textContent = totalProyectos;
+    document.getElementById("kpiVentas").textContent = `$${ventas}`;
+    document.getElementById("kpiProbable").textContent = `$${probable}`;
+    document.getElementById("kpiTicket").textContent = `$${ticket}`;
+    document.getElementById("kpiConversion").textContent = `${conversion}%`;
+
+    graficarMontos(proyectos);
+    graficarEstatus(proyectos);
+}
+
+/* ==================================================================== */
+/* ===================== GRÁFICAS ===================================== */
+/* ==================================================================== */
+
+function graficarMontos(proyectos) {
+    const ctx = document.getElementById("chartMontos").getContext("2d");
+
+    const labels = proyectos.map(p => p.cliente);
+    const data = proyectos.map(p => Number(p.monto));
+
+    if (chartMontos) chartMontos.destroy();
+
+    chartMontos = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: "Montos por Proyecto",
+                    data,
+                    backgroundColor: "#ffd600",
+                    borderColor: "#0d47a1",
+                    borderWidth: 1
+                }
+            ]
+        }
+    });
+}
+
+function graficarEstatus(proyectos) {
+    const ctx = document.getElementById("chartEstatus").getContext("2d");
+
+    const estatus = ["activo", "ganado", "cerrado", "proceso", "negociación", "perdido"];
+    const valores = estatus.map(e =>
+        proyectos.filter(p => p.estatus === e).length
+    );
+
+    if (chartEstatus) chartEstatus.destroy();
+
+    chartEstatus = new Chart(ctx, {
+        type: "pie",
+        data: {
+            labels: estatus,
+            datasets: [
+                {
+                    data: valores,
+                    backgroundColor: [
+                        "#0d47a1",
+                        "#42a5f5",
+                        "#90caf9",
+                        "#ffd600",
+                        "#ffb300",
+                        "#ff6f00"
+                    ]
+                }
+            ]
+        }
+    });
+}
+
+/* ==================================================================== */
+/* ===================== EXPORTAR A EXCEL ============================= */
+/* ==================================================================== */
+
+document.getElementById("exportExcel").addEventListener("click", () => {
+    const proyectos = JSON.parse(localStorage.getItem("proyectos")) || [];
+
+    const hoja = proyectos.map(p => ({
+        Cliente: p.cliente,
+        Monto: p.monto,
+        Descripción: p.descripcion,
+        Estatus: p.estatus,
+        Probabilidad: p.probabilidad,
+        Comisión: p.comision
+    }));
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(hoja);
+    XLSX.utils.book_append_sheet(wb, ws, "Proyectos");
+
+    XLSX.writeFile(wb, "proyectos.xlsx");
+});
+
+/* ==================================================================== */
+/* === LLAMAR DASHBOARD CADA VEZ QUE CAMBIE LA INFO =================== */
+/* ==================================================================== */
+
+actualizarDashboard();
 
 /* ---------- On load, ensure panels visible per viewMode ---------- */
 applyFiltersAndSearch();
