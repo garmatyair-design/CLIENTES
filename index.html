@@ -15,13 +15,15 @@
     </div>
 
     <div>
-      <a href="jdashboard.html" id="openDashboardBtn" style="display:inline-block;padding:8px 12px;border-radius:8px;background:#2563EB;color:#fff;text-decoration:none;font-weight:600">Ver Dashboard</a>
+      <a href="dashboard.html" id="openDashboardBtn" style="display:inline-block;padding:8px 12px;border-radius:8px;background:#2563EB;color:#fff;text-decoration:none;font-weight:600">Ver Dashboard</a>
     </div>
   </header>
 
   <main class="container" style="max-width:1200px;margin:22px auto;padding:0 18px">
 
-    <!-- AGREGAR CLIENTE -->
+    <!-- --------------------------
+          AGREGAR CLIENTE
+    --------------------------- -->
     <section style="background:white;padding:15px;margin-bottom:20px;border-radius:8px;box-shadow:0 0 5px #ccc">
       <h2>Agregar Cliente</h2>
       <form id="clientForm">
@@ -34,10 +36,13 @@
       </form>
     </section>
 
-    <!-- AGREGAR PROYECTO -->
+    <!-- --------------------------
+          AGREGAR PROYECTO
+    --------------------------- -->
     <section style="background:white;padding:15px;margin-bottom:20px;border-radius:8px;box-shadow:0 0 5px #ccc">
       <h2>Agregar Proyecto</h2>
       <form id="projectForm">
+
         <select id="projectClient" required style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc">
           <option value="">Selecciona un cliente</option>
         </select>
@@ -58,11 +63,19 @@
 
         <input type="number" id="projectProb" placeholder="Probabilidad (%)" value="100" min="0" max="100" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc" />
 
+        <!-- NUEVA CAJA DE COMENTARIOS -->
+        <textarea id="projectComments" placeholder="Comentarios del proyecto"
+        style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc"></textarea>
+
+        <!-- NUEVO: SUBIR PDF -->
+        <input type="file" id="projectPDF" accept="application/pdf"
+        style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc"/>
+
         <button type="submit" style="width:100%;padding:10px;background:#2563EB;color:white;border:none;border-radius:6px;font-weight:700;cursor:pointer">Guardar Proyecto</button>
       </form>
     </section>
 
-    <!-- LISTA CLIENTES -->
+    <!-- CLIENTES -->
     <section style="background:white;padding:15px;margin-bottom:20px;border-radius:8px;box-shadow:0 0 5px #ccc">
       <h2>Clientes</h2>
       <table style="width:100%;border-collapse:collapse">
@@ -77,36 +90,36 @@
       </table>
     </section>
 
-    <!-- LISTA PROYECTOS -->
+    <!-- PROYECTOS -->
     <section style="background:white;padding:15px;margin-bottom:20px;border-radius:8px;box-shadow:0 0 5px #ccc">
       <h2>Proyectos</h2>
       <table style="width:100%;border-collapse:collapse">
         <thead>
           <tr style="background:#f8fbff">
-            <th style="text-align:left;padding:10px">Proyecto</th>
-            <th style="text-align:left;padding:10px">Cliente</th>
-            <th style="text-align:left;padding:10px">Monto</th>
-            <th style="text-align:left;padding:10px">Estatus</th>
-            <th style="text-align:left;padding:10px">Prob %</th>
-            <th style="text-align:left;padding:10px">Comisión</th>
-            <th style="text-align:left;padding:10px">Acciones</th>
+            <th style="padding:10px;text-align:left">Proyecto</th>
+            <th style="padding:10px;text-align:left">Cliente</th>
+            <th style="padding:10px;text-align:left">Monto</th>
+            <th style="padding:10px;text-align:left">Estatus</th>
+            <th style="padding:10px;text-align:left">Prob</th>
+            <th style="padding:10px;text-align:left">Comisión</th>
+
+            <th style="padding:10px;text-align:left">Comentarios</th>
+            <th style="padding:10px;text-align:left">PDF</th>
+
+            <th style="padding:10px;text-align:left">Acciones</th>
           </tr>
         </thead>
         <tbody id="projectList"></tbody>
       </table>
     </section>
 
-    <!-- Export all (clientes + proyectos + KPIs) -->
     <section style="text-align:right;margin-bottom:40px">
       <button id="exportAllBtn" style="padding:10px 14px;background:#FBBF24;border:none;border-radius:6px;font-weight:700;cursor:pointer">Exportar todo a Excel</button>
     </section>
 
   </main>
 
-  <!-- SheetJS (XLSX) - required for export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-  <!-- Main app script -->
   <script src="js-app.js"></script>
 </body>
 </html>
