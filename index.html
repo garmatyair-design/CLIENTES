@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CRM Proyectos — Mini Sistema</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="header-left">
+      <h1>CRM Proyectos</h1>
+      <p class="subtitle">App moderna — azul / amarillo — CRUD completo</p>
+    </div>
+    <div class="header-actions">
+      <input id="searchInput" placeholder="Buscar clientes o proyectos..." class="search" />
+      <button id="openAddClient" class="btn btn-yellow">+ Cliente</button>
+      <button id="openAddProject" class="btn btn-blue">+ Proyecto</button>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- DASHBOARD -->
+    <section class="grid cards" id="dashboardCards">
+      <!-- cards rendered by JS -->
+    </section>
+
+    <!-- CONTROLS -->
+    <section class="controls">
+      <div class="control">
+        <label>Filtrar por Cliente</label>
+        <select id="filterClient">
+          <option value="">Todos los clientes</option>
+        </select>
+      </div>
+
+      <div class="control">
+        <label>Filtrar por Estatus</label>
+        <select id="filterStatus">
+          <option value="">Todos los estatus</option>
+          <option value="activo">Activo</option>
+          <option value="proceso">En proceso</option>
+          <option value="negociacion">Negociación</option>
+          <option value="ganado">Ganado</option>
+          <option value="cerrado">Cerrado</option>
+          <option value="cancelado">Cancelado</option>
+          <option value="perdido">Perdido</option>
+        </select>
+      </div>
+
+      <div class="control inline">
+        <label>Mostrar</label>
+        <select id="viewMode">
+          <option value="both">Clientes + Proyectos</option>
+          <option value="clients">Solo Clientes</option>
+          <option value="projects">Solo Proyectos</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- TABLES -->
+    <section id="mainViews" class="grid two-cols">
+      <div class="panel" id="clientsPanel">
+        <div class="panel-header">
+          <h2>Clientes</h2>
+          <div class="panel-actions">
+            <button id="exportClients" class="link">Exportar JSON</button>
+            <button id="importClientsBtn" class="link">Importar</button>
+            <input id="importClientsFile" type="file" accept="application/json" style="display:none"/>
+          </div>
+        </div>
+        <table class="table" id="clientsTable">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Tipo</th>
+              <th># Proyectos</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="panel" id="projectsPanel">
+        <div class="panel-header">
+          <h2>Proyectos</h2>
+          <div class="panel-actions">
+            <button id="exportProjects" class="link">Exportar JSON</button>
+            <button id="importProjectsBtn" class="link">Importar</button>
+            <input id="importProjectsFile" type="file" accept="application/json" style="display:none"/>
+          </div>
+        </div>
+        <table class="table" id="projectsTable">
+          <thead>
+            <tr>
+              <th>Proyecto</th>
+              <th>Cliente</th>
+              <th>Monto</th>
+              <th>Estatus</th>
+              <th>Prob %</th>
+              <th>Comisión</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODALES -->
+  <div id="modalBackdrop" class="modal-backdrop hidden"></div>
+
+  <div id="modalClient" class="modal hidden">
+    <h3 id="modalClientTitle">Agregar Cliente</h3>
+    <form id="clientForm" class="form">
+      <label>Nombre</label>
+      <input id="clientName" required />
+      <label>Tipo</label>
+      <select id="clientType">
+        <option value="1">Tipo 1 (1%)</option>
+        <option value="2">Tipo 2 (1.5%)</option>
+      </select>
+      <div class="form-row">
+        <button type="submit" class="btn btn-blue">Guardar</button>
+        <button type="button" id="cancelClient" class="btn btn-ghost">Cancelar</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="modalProject" class="modal hidden">
+    <h3 id="modalProjectTitle">Agregar Proyecto</h3>
+    <form id="projectForm" class="form">
+      <label>Cliente</label>
+      <select id="projectClientSelect" required>
+        <option value="">Selecciona un cliente</option>
+      </select>
+
+      <label>Nombre proyecto</label>
+      <input id="projectNameInput" required />
+
+      <label>Monto</label>
+      <input id="projectMontoInput" type="number" min="0" step="0.01" required />
+
+      <label>Posiciones</label>
+      <input id="projectPosInput" type="number" min="0" step="1" />
+
+      <label>Estatus</label>
+      <select id="projectStatusSelect">
+        <option value="activo">Activo</option>
+        <option value="proceso">En proceso</option>
+        <option value="negociacion">Negociación</option>
+        <option value="ganado">Ganado</option>
+        <option value="cerrado">Cerrado</option>
+        <option value="cancelado">Cancelado</option>
+        <option value="perdido">Perdido</option>
+      </select>
+
+      <label>Probabilidad (%)</label>
+      <input id="projectProbInput" type="number" min="0" max="100" value="100" />
+
+      <div class="form-row">
+        <button type="submit" class="btn btn-blue">Guardar</button>
+        <button type="button" id="cancelProject" class="btn btn-ghost">Cancelar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="app.js"></script>
+</body>
+</html>
