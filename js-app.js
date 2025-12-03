@@ -1,105 +1,101 @@
-// ======================================================
-//   Cargar datos iniciales
-// ======================================================
+// =========================================
+//   DATA
+// =========================================
 let clients = JSON.parse(localStorage.getItem("clients") || "[]");
 let projects = JSON.parse(localStorage.getItem("projects") || "[]");
 
-// ======================================================
-//   Renderizar listas
-// ======================================================
-function renderClients() {
+
+// =========================================
+//   RENDER CLIENTES
+// =========================================
+function renderClients(search = "") {
   const list = document.getElementById("clientList");
   const select = document.getElementById("projectClient");
-
-  if (!list || !select) return;
 
   list.innerHTML = "";
   select.innerHTML = `<option value="">Selecciona un cliente</option>`;
 
-  clients.forEach(c => {
-    list.innerHTML += `
-      <tr>
-        <td style="padding:10px">${c.name}</td>
-        <td style="padding:10px">${c.type}</td>
-        <td style="padding:10px">
-          <button onclick="deleteClient(${c.id})">Eliminar</button>
-        </td>
-      </tr>
-    `;
-
-    select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
-  });
+  clients
+    .filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+    .forEach(c => {
+      list.innerHTML += `
+        <tr>
+          <td>${c.name}</td>
+          <td>${c.type}</td>
+          <td><button onclick="deleteClient(${c.id})">Eliminar</button></td>
+        </tr>
+      `;
+      select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+    });
 }
 
-function renderProjects() {
-  const list = document.getElementById("projectList");
-  if (!list) return;
 
+// =========================================
+//   RENDER PROYECTOS
+// =========================================
+function renderProjects(search = "", filter = "") {
+  const list = document.getElementById("projectList");
   list.innerHTML = "";
 
-  projects.forEach(p => {
-    const client = clients.find(c => c.id == p.clientId);
+  projects
+    .filter(p =>
+      p.name.toLowerCase().includes(search.toLowerCase()) &&
+      (filter === "" || p.status === filter)
+    )
+    .forEach(p => {
+      const client = clients.find(c => c.id == p.clientId);
 
-    list.innerHTML += `
-      <tr>
-        <td style="padding:10px">${p.name}</td>
-        <td style="padding:10px">${client ? client.name : ""}</td>
-        <td style="padding:10px">$${p.amount}</td>
-        <td style="padding:10px">${p.status}</td>
-        <td style="padding:10px">${p.prob}%</td>
-        <td style="padding:10px">$${p.commission}</td>
+      list.innerHTML += `
+        <tr>
+          <td>${p.name}</td>
+          <td>${client ? client.name : ""}</td>
+          <td>$${p.amount}</td>
+          <td>${p.status}</td>
+          <td>${p.prob}%</td>
+          <td>$${p.commission}</td>
 
-        <td style="padding:10px">
-          ${p.comments ? `<button onclick="alert('${p.comments.replace(/'/g," ")}')">Ver</button>` : "—"}
-        </td>
+          <td>${p.comments ? `<button onclick="alert('${p.comments.replace(/'/g," ")}')">Ver</button>` : "—"}</td>
+          <td>${p.pdf ? `<a href="${p.pdf}" download="proyecto_${p.id}.pdf">PDF</a>` : "—"}</td>
 
-        <td style="padding:10px">
-          ${p.pdf ? `<a href="${p.pdf}" download="proyecto_${p.id}.pdf">PDF</a>` : "—"}
-        </td>
-
-        <td style="padding:10px">
-          <button onclick="deleteProject(${p.id})">Eliminar</button>
-        </td>
-      </tr>
-    `;
-  });
+          <td><button onclick="deleteProject(${p.id})">Eliminar</button></td>
+        </tr>
+      `;
+    });
 }
 
-// ======================================================
-//   Guardar Cliente
-// ======================================================
+
+// =========================================
+//   GUARDAR CLIENTE
+// =========================================
 document.getElementById("clientForm")?.addEventListener("submit", e => {
   e.preventDefault();
 
-  const name = document.getElementById("clientName").value.trim();
-  const type = document.getElementById("clientType").value;
+  const name = clientName.value.trim();
+  const type = clientType.value;
 
   if (!name) return;
 
-  clients.push({
-    id: Date.now(),
-    name,
-    type
-  });
-
+  clients.push({ id: Date.now(), name, type });
   localStorage.setItem("clients", JSON.stringify(clients));
-  document.getElementById("clientForm").reset();
+
+  clientForm.reset();
   renderClients();
 });
 
-// ======================================================
-//   Guardar Proyecto
-// ======================================================
+
+// =========================================
+//   GUARDAR PROYECTO
+// =========================================
 document.getElementById("projectForm")?.addEventListener("submit", e => {
   e.preventDefault();
 
-  const clientId = document.getElementById("projectClient").value;
-  const name = document.getElementById("projectName").value.trim();
-  const amount = Number(document.getElementById("projectAmount").value);
-  const status = document.getElementById("projectStatus").value;
-  const prob = Number(document.getElementById("projectProb").value);
-  const comments = document.getElementById("projectComments").value.trim();
-  const pdfFile = document.getElementById("projectPDF").files[0];
+  const clientId = projectClient.value;
+  const name = projectName.value.trim();
+  const amount = Number(projectAmount.value);
+  const status = projectStatus.value;
+  const prob = Number(projectProb.value);
+  const comments = projectComments.value.trim();
+  const pdfFile = projectPDF.files[0];
 
   if (!clientId || !name || !amount) return;
 
@@ -107,11 +103,9 @@ document.getElementById("projectForm")?.addEventListener("submit", e => {
   const commission = client.type == "1" ? amount * 0.01 : amount * 0.015;
 
   if (pdfFile) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      saveProject(e.target.result);
-    };
-    reader.readAsDataURL(pdfFile);
+    const r = new FileReader();
+    r.onload = e => saveProject(e.target.result);
+    r.readAsDataURL(pdfFile);
   } else {
     saveProject(null);
   }
@@ -130,14 +124,15 @@ document.getElementById("projectForm")?.addEventListener("submit", e => {
     });
 
     localStorage.setItem("projects", JSON.stringify(projects));
-    document.getElementById("projectForm").reset();
+    projectForm.reset();
     renderProjects();
   }
 });
 
-// ======================================================
-//   Eliminar
-// ======================================================
+
+// =========================================
+//   DELETE
+// =========================================
 function deleteClient(id) {
   clients = clients.filter(c => c.id !== id);
   localStorage.setItem("clients", JSON.stringify(clients));
@@ -150,9 +145,10 @@ function deleteProject(id) {
   renderProjects();
 }
 
-// ======================================================
-//   Exportar Excel
-// ======================================================
+
+// =========================================
+//   EXPORTAR A EXCEL
+// =========================================
 document.getElementById("exportAllBtn")?.addEventListener("click", () => {
   const wb = XLSX.utils.book_new();
 
@@ -162,8 +158,30 @@ document.getElementById("exportAllBtn")?.addEventListener("click", () => {
   XLSX.writeFile(wb, "crm_export.xlsx");
 });
 
-// ======================================================
-//   Inicializar
-// ======================================================
+
+// =========================================
+//   BUSQUEDAS
+// =========================================
+clientSearch?.addEventListener("input", e => {
+  renderClients(e.target.value);
+});
+
+projectSearch?.addEventListener("input", e => {
+  renderProjects(e.target.value, filterStatus.value);
+});
+
+globalSearch?.addEventListener("input", e => {
+  renderClients(e.target.value);
+  renderProjects(e.target.value, filterStatus.value);
+});
+
+filterStatus?.addEventListener("change", () => {
+  renderProjects(projectSearch.value, filterStatus.value);
+});
+
+
+// =========================================
+//   INIT
+// =========================================
 renderClients();
 renderProjects();
