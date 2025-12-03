@@ -1,665 +1,224 @@
-/* Mini CRM — Opción B (interfaz moderna)
-   Funcionalidades:
-   - Clientes CRUD (agregar, editar, eliminar)
-   - Proyectos CRUD ligados a cliente
-   - Filtros, buscador, export/import JSON
-   - Dashboard con métricas: ventas ganadas, probables, activos, ticket promedio, conversión, comisión estimada
-   - LocalStorage como persistencia
+/* js-app.js
+   Final unificado: CRUD clientes/proyectos, comisiones, export a excel.
+   Storage keys: crm_clients_v2, crm_projects_v2
+   No listeners duplicados. Safe for index.html + dashboard.html (same origin).
 */
+(function(){
+  const KEY_CLIENTS = 'crm_clients_v2';
+  const KEY_PROJECTS = 'crm_projects_v2';
 
-/* ---------- Utilities ---------- */
-const $ = (id) => document.getElementById(id);
-const clamp = (n, min=0) => isNaN(n)?0: Math.max(min, Number(n));
+  // state
+  let clients = JSON.parse(localStorage.getItem(KEY_CLIENTS) || '[]');
+  let projects = JSON.parse(localStorage.getItem(KEY_PROJECTS) || '[]');
 
-/* ---------- Storage keys ---------- */
-const KEY_CLIENTS = 'crm_clients_v2';
-const KEY_PROJECTS = 'crm_projects_v2';
+  // DOM
+  const clientForm = document.getElementById('clientForm');
+  const clientName = document.getElementById('clientName');
+  const clientType = document.getElementById('clientType');
+  const clientList = document.getElementById('clientList');
 
-/* ---------- State ---------- */
-let clients = JSON.parse(localStorage.getItem(KEY_CLIENTS) || '[]');
-let projects = JSON.parse(localStorage.getItem(KEY_PROJECTS) || '[]');
+  const projectForm = document.getElementById('projectForm');
+  const projectClient = document.getElementById('projectClient');
+  const projectName = document.getElementById('projectName');
+  const projectAmount = document.getElementById('projectAmount');
+  const projectStatus = document.getElementById('projectStatus');
+  const projectProb = document.getElementById('projectProb');
+  const projectList = document.getElementById('projectList');
 
-/* ---------- DOM refs ---------- */
-const searchInput = $('searchInput');
-const filterClient = $('filterClient');
-const filterStatus = $('filterStatus');
-const viewMode = $('viewMode');
+  const exportAllBtn = document.getElementById('exportAllBtn');
 
-const clientsTableBody = $('clientsTable').querySelector('tbody');
-const projectsTableBody = $('projectsTable').querySelector('tbody');
-const dashboardCards = $('dashboardCards');
+  // helpers
+  function saveClients(){ localStorage.setItem(KEY_CLIENTS, JSON.stringify(clients)); window.dispatchEvent(new Event('storage')); }
+  function saveProjects(){ localStorage.setItem(KEY_PROJECTS, JSON.stringify(projects)); window.dispatchEvent(new Event('storage')); }
 
-const openAddClientBtn = $('openAddClient');
-const openAddProjectBtn = $('openAddProject');
+  function formatMoney(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
-const modalBackdrop = $('modalBackdrop');
-const modalClient = $('modalClient');
-const clientForm = $('clientForm');
-const clientNameInput = $('clientName');
-const clientTypeInput = $('clientType');
-const cancelClientBtn = $('cancelClient');
-
-const modalProject = $('modalProject');
-const projectForm = $('projectForm');
-const projectClientSelect = $('projectClientSelect');
-const projectNameInput = $('projectNameInput');
-const projectMontoInput = $('projectMontoInput');
-const projectPosInput = $('projectPosInput');
-const projectStatusSelect = $('projectStatusSelect');
-const projectProbInput = $('projectProbInput');
-const cancelProjectBtn = $('cancelProject');
-
-const exportClientsBtn = $('exportClients');
-const importClientsBtn = $('importClientsBtn');
-const importClientsFile = $('importClientsFile');
-const exportProjectsBtn = $('exportProjects');
-const importProjectsBtn = $('importProjectsBtn');
-const importProjectsFile = $('importProjectsFile');
-
-/* ---------- Modal helpers ---------- */
-function showModal(modal){
-  modalBackdrop.classList.remove('hidden');
-  modal.classList.remove('hidden');
-}
-function hideModal(modal){
-  modalBackdrop.classList.add('hidden');
-  modal.classList.add('hidden');
-}
-/* close on backdrop */
-modalBackdrop.addEventListener('click', ()=>{
-  hideModal(modalClient); hideModal(modalProject);
-});
-
-/* ---------- Persistence ---------- */
-function saveClients(){
-  localStorage.setItem(KEY_CLIENTS, JSON.stringify(clients));
-}
-function saveProjects(){
-  localStorage.setItem(KEY_PROJECTS, JSON.stringify(projects));
-}
-
-/* ---------- Rendering ---------- */
-function renderClientFilterOptions(){
-  filterClient.innerHTML = '<option value="">Todos los clientes</option>';
-  projectClientSelect.innerHTML = '<option value="">Selecciona un cliente</option>';
-  clients.forEach(c=>{
-    const opt = `<option value="${c.id}">${c.nombre}</option>`;
-    filterClient.insertAdjacentHTML('beforeend', opt);
-    projectClientSelect.insertAdjacentHTML('beforeend', opt);
-  });
-}
-
-function renderClientsTable(filteredClients){
-  clientsTableBody.innerHTML = '';
-  (filteredClients || clients).forEach(c=>{
-    const count = projects.filter(p => p.clienteId === c.id).length;
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${escapeHtml(c.nombre)}</td>
-      <td>${c.tipo}</td>
-      <td>${count}</td>
-      <td>
-        <button class="action-btn action-edit" data-id="${c.id}" data-type="edit-client">Editar</button>
-        <button class="action-btn action-delete" data-id="${c.id}" data-type="del-client">Eliminar</button>
-      </td>
-    `;
-    clientsTableBody.appendChild(row);
-  });
-}
-
-function renderProjectsTable(filteredProjects){
-  projectsTableBody.innerHTML = '';
-  (filteredProjects || projects).forEach(p=>{
-    const cliente = clients.find(c=>c.id===p.clienteId) || {nombre:'Sin cliente', tipo:'1'};
-    const commission = (cliente.tipo==='1') ? (p.monto * 0.01) : (p.monto * 0.015);
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${escapeHtml(p.nombre)}</td>
-      <td>${escapeHtml(cliente.nombre)}</td>
-      <td>$${Number(p.monto).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-      <td>${p.estatus}</td>
-      <td>${p.probabilidad}%</td>
-      <td>$${commission.toFixed(2)}</td>
-      <td>
-        <button class="action-btn action-edit" data-id="${p.id}" data-type="edit-project">Editar</button>
-        <button class="action-btn action-delete" data-id="${p.id}" data-type="del-project">Eliminar</button>
-      </td>
-    `;
-    projectsTableBody.appendChild(row);
-  });
-}
-
-function renderDashboardCards(){
-  const ventasTotales = projects
-    .filter(p => p.estatus==='ganado' || p.estatus==='cerrado')
-    .reduce((s,p)=> s + Number(p.monto || 0), 0);
-
-  const montoProbable = projects
-    .filter(p => p.estatus==='proceso' || p.estatus==='negociacion')
-    .reduce((s,p)=> s + ((Number(p.monto||0) * Number(p.probabilidad||0))/100), 0);
-
-  const montoActivo = projects
-    .filter(p => p.estatus==='activo')
-    .reduce((s,p)=> s + Number(p.monto||0), 0);
-
-  const ticketPromedio = projects.length ? (projects.reduce((s,p)=> s + Number(p.monto||0),0)/projects.length) : 0;
-
-  const totalProjects = projects.length;
-  const won = projects.filter(p => p.estatus==='ganado' || p.estatus==='cerrado').length;
-  const porcentajeConversion = totalProjects ? (won / totalProjects) * 100 : 0;
-
-  // comisión estimada sobre proyectos activos
-  const comisionEstim = projects.reduce((acc,p)=>{
-    const cliente = clients.find(c=>c.id===p.clienteId);
-    if(!cliente) return acc;
-    const pct = cliente.tipo==='1' ? 0.01 : 0.015;
-    return acc + (Number(p.monto||0) * pct);
-  },0);
-
-  dashboardCards.innerHTML = '';
-  const cards = [
-    {title:'Total Ventas (ganadas)', value:`$${ventasTotales.toLocaleString(undefined,{minimumFractionDigits:2})}`},
-    {title:'Monto Probable', value:`$${montoProbable.toLocaleString(undefined,{minimumFractionDigits:2})}`},
-    {title:'Monto Activo', value:`$${montoActivo.toLocaleString(undefined,{minimumFractionDigits:2})}`},
-    {title:'Ticket Promedio', value:`$${ticketPromedio.toFixed(2)}`},
-    {title:'Conversión', value:`${porcentajeConversion.toFixed(1)}%`},
-    {title:'Comisión estimada (act.)', value:`$${comisionEstim.toFixed(2)}`}
-  ];
-
-  cards.forEach(c=>{
-    const el = document.createElement('div');
-    el.className = 'card kpi';
-    el.innerHTML = `<p class="card-title">${c.title}</p><div class="card-value">${c.value}</div>`;
-    dashboardCards.appendChild(el);
-  });
-}
-
-/* ---------- Helpers ---------- */
-function escapeHtml(str=''){
-  return String(str).replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-
-/* ---------- CRUD Actions ---------- */
-/* Add client */
-clientForm.addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const name = clientNameInput.value.trim();
-  const tipo = clientTypeInput.value;
-  if(!name) return alert('Nombre requerido');
-  const newClient = { id: 'c'+Date.now(), nombre: name, tipo };
-  clients.push(newClient);
-  saveClients();
-  renderAll();
-  hideModal(modalClient);
-});
-
-/* Edit / Delete via event delegation (clients table) */
-clientsTableBody.addEventListener('click', (e)=>{
-  const btn = e.target.closest('button');
-  if(!btn) return;
-  const id = btn.dataset.id;
-  const type = btn.dataset.type;
-  if(type==='edit-client'){
-    openEditClient(id);
-  } else if(type==='del-client'){
-    if(confirm('Eliminar cliente y todos sus proyectos?')){
-      // remove projects related
-      projects = projects.filter(p => p.clienteId !== id);
-      clients = clients.filter(c => c.id !== id);
-      saveProjects(); saveClients();
-      renderAll();
-    }
+  function calcCommission(project){
+    const client = clients.find(c=>c.id===project.clientId);
+    const pct = client && client.tipo==='2' ? 0.015 : 0.01;
+    return Number(project.amount||0) * pct;
   }
-});
 
-/* Edit / Delete via event delegation (projects table) */
-projectsTableBody.addEventListener('click', (e)=>{
-  const btn = e.target.closest('button');
-  if(!btn) return;
-  const id = btn.dataset.id;
-  const type = btn.dataset.type;
-  if(type==='edit-project'){
-    openEditProject(id);
-  } else if(type==='del-project'){
-    if(confirm('Eliminar proyecto?')){
-      projects = projects.filter(p => p.id !== id);
-      saveProjects();
-      renderAll();
-    }
+  function escapeHtml(s=''){ return String(s).replace(/[&<>"']/g,(m)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+  // render
+  function renderClientOptions(){
+    if(!projectClient) return;
+    projectClient.innerHTML = '<option value="">Selecciona un cliente</option>';
+    clients.forEach(c=>{
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.nombre;
+      projectClient.appendChild(opt);
+    });
   }
-});
 
-/* Add project */
-projectForm.addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const clienteId = projectClientSelect.value;
-  const nombre = projectNameInput.value.trim();
-  const monto = clamp(parseFloat(projectMontoInput.value));
-  const posiciones = clamp(parseInt(projectPosInput.value||0,10));
-  const estatus = projectStatusSelect.value;
-  const probabilidad = clamp(parseFloat(projectProbInput.value||0),0);
+  function renderClients(){
+    if(!clientList) return;
+    clientList.innerHTML = '';
+    clients.forEach(c=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td style="padding:10px">${escapeHtml(c.nombre)}</td>
+                      <td style="padding:10px">${escapeHtml(c.tipo)}</td>
+                      <td style="padding:10px">
+                        <button data-id="${c.id}" class="edit-client" style="margin-right:8px;padding:6px 8px;background:#2563EB;color:#fff;border-radius:6px;border:0;cursor:pointer">Editar</button>
+                        <button data-id="${c.id}" class="del-client" style="padding:6px 8px;background:#ef4444;color:#fff;border-radius:6px;border:0;cursor:pointer">Eliminar</button>
+                      </td>`;
+      clientList.appendChild(tr);
+    });
+  }
 
-  if(!clienteId || !nombre) return alert('Cliente y nombre requeridos');
-  const newProject = {
-    id:'p'+Date.now(),
-    clienteId,
-    nombre,
-    monto,
-    posiciones,
-    estatus,
-    probabilidad,
-    createdAt: new Date().toISOString()
-  };
-  projects.push(newProject);
-  saveProjects();
-  renderAll();
-  hideModal(modalProject);
-});
+  function renderProjects(){
+    if(!projectList) return;
+    projectList.innerHTML = '';
+    projects.forEach(p=>{
+      const client = clients.find(c=>c.id===p.clientId) || {nombre:'Sin cliente'};
+      const commission = calcCommission(p);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td style="padding:10px">${escapeHtml(p.nombre)}</td>
+                      <td style="padding:10px">${escapeHtml(client.nombre)}</td>
+                      <td style="padding:10px">$${formatMoney(p.amount)}</td>
+                      <td style="padding:10px">${escapeHtml(p.estatus)}</td>
+                      <td style="padding:10px">${p.probabilidad}%</td>
+                      <td style="padding:10px">$${formatMoney(commission)}</td>
+                      <td style="padding:10px">
+                        <button data-id="${p.id}" class="edit-project" style="margin-right:8px;padding:6px 8px;background:#2563EB;color:#fff;border-radius:6px;border:0;cursor:pointer">Editar</button>
+                        <button data-id="${p.id}" class="del-project" style="padding:6px 8px;background:#ef4444;color:#fff;border-radius:6px;border:0;cursor:pointer">Eliminar</button>
+                      </td>`;
+      projectList.appendChild(tr);
+    });
+  }
 
-/* ---------- Edit helpers (open edit modals) ---------- */
-function openEditClient(id){
-  const client = clients.find(c=>c.id===id);
-  if(!client) return;
-  clientNameInput.value = client.nombre;
-  clientTypeInput.value = client.tipo;
-  $('modalClientTitle').innerText = 'Editar Cliente';
-  showModal(modalClient);
-
-  // change submit handler temporarily
-  const handler = function(e){
+  // add client
+  function handleAddClient(e){
     e.preventDefault();
-    client.nombre = clientNameInput.value.trim();
-    client.tipo = clientTypeInput.value;
+    const name = (clientName && clientName.value.trim()) || '';
+    const tipo = (clientType && clientType.value) || '1';
+    if(!name){ alert('Nombre requerido'); return; }
+    const newClient = { id:'c'+Date.now(), nombre:name, tipo };
+    clients.push(newClient);
     saveClients();
-    renderAll();
-    hideModal(modalClient);
-    clientForm.removeEventListener('submit', handler);
-    clientForm.addEventListener('submit', clientSubmitBackup);
-    $('modalClientTitle').innerText = 'Agregar Cliente';
-  };
-
-  // backup original and replace
-  const clientSubmitBackup = clientForm._backup || null;
-  if(!clientForm._backup){
-    // create backup wrapper
-    function backup(e){ e.preventDefault(); const name = clientNameInput.value.trim(); const tipo = clientTypeInput.value; if(!name) return alert('Nombre requerido'); const newClient = { id: 'c'+Date.now(), nombre: name, tipo }; clients.push(newClient); saveClients(); renderAll(); hideModal(modalClient); }
-    clientForm._backup = backup;
-    clientForm.removeEventListener('submit', backup);
-    clientForm.addEventListener('submit', handler);
-  } else {
-    // remove existing and set new
-    clientForm.removeEventListener('submit', clientForm._backup);
-    clientForm.addEventListener('submit', handler);
+    clientForm.reset();
+    renderClientOptions(); renderClients(); renderProjects();
   }
-}
 
-function openEditProject(id){
-  const project = projects.find(p=>p.id===id);
-  if(!project) return;
-
-  projectClientSelect.value = project.clienteId;
-  projectNameInput.value = project.nombre;
-  projectMontoInput.value = project.monto;
-  projectPosInput.value = project.posiciones;
-  projectStatusSelect.value = project.estatus;
-  projectProbInput.value = project.probabilidad;
-
-  $('modalProjectTitle').innerText = 'Editar Proyecto';
-  showModal(modalProject);
-
-  // create edit handler
-  const handler = function(e){
+  // add project
+  function handleAddProject(e){
     e.preventDefault();
-    project.clienteId = projectClientSelect.value;
-    project.nombre = projectNameInput.value.trim();
-    project.monto = clamp(parseFloat(projectMontoInput.value));
-    project.posiciones = clamp(parseInt(projectPosInput.value||0,10));
-    project.estatus = projectStatusSelect.value;
-    project.probabilidad = clamp(parseFloat(projectProbInput.value||0),0);
-    project.updatedAt = new Date().toISOString();
+    const cid = projectClient && projectClient.value;
+    const name = projectName && projectName.value.trim();
+    const amount = Number(projectAmount && projectAmount.value || 0);
+    const estatus = projectStatus && projectStatus.value || 'activo';
+    const prob = Number(projectProb && projectProb.value || 0);
+    if(!cid){ alert('Selecciona un cliente'); return; }
+    if(!name){ alert('Nombre del proyecto requerido'); return; }
+    const newProject = { id:'p'+Date.now(), clientId:cid, nombre:name, amount, estatus, probabilidad:prob, createdAt:new Date().toISOString() };
+    projects.push(newProject);
     saveProjects();
-    renderAll();
-    hideModal(modalProject);
-    projectForm.removeEventListener('submit', handler);
-    projectForm.addEventListener('submit', projectSubmitBackup);
-    $('modalProjectTitle').innerText = 'Agregar Proyecto';
-  };
-
-  // backup original if not done
-  if(!projectForm._backup){
-    function backup(e){ e.preventDefault(); const clienteId = projectClientSelect.value; const nombre = projectNameInput.value.trim(); const monto = clamp(parseFloat(projectMontoInput.value)); if(!clienteId||!nombre) return alert('Cliente y nombre requeridos'); const n = { id:'p'+Date.now(), clienteId, nombre, monto, posiciones:clamp(parseInt(projectPosInput.value||0,10)), estatus:projectStatusSelect.value, probabilidad:clamp(parseFloat(projectProbInput.value||0),0), createdAt:new Date().toISOString() }; projects.push(n); saveProjects(); renderAll(); hideModal(modalProject); }
-    projectForm._backup = backup;
-    projectForm.removeEventListener('submit', backup);
-    projectForm.addEventListener('submit', handler);
-  } else {
-    projectForm.removeEventListener('submit', projectForm._backup);
-    projectForm.addEventListener('submit', handler);
-  }
-}
-
-/* ---------- Search & Filters ---------- */
-function applyFiltersAndSearch(){
-  const q = searchInput.value.trim().toLowerCase();
-  const clientFilter = filterClient.value;
-  const statusFilter = filterStatus.value;
-  const mode = viewMode.value;
-
-  // filter clients
-  const filteredClients = clients.filter(c=>{
-    if(clientFilter && c.id !== clientFilter) return false;
-    if(q){
-      return c.nombre.toLowerCase().includes(q);
-    }
-    return true;
-  });
-
-  // filter projects
-  const filteredProjects = projects.filter(p=>{
-    if(clientFilter && p.clienteId !== clientFilter) return false;
-    if(statusFilter && p.estatus !== statusFilter) return false;
-    if(q){
-      const cliente = clients.find(c=>c.id===p.clienteId) || {nombre:''};
-      const hay = (p.nombre + ' ' + cliente.nombre).toLowerCase().includes(q);
-      return hay;
-    }
-    return true;
-  });
-
-  // view mode
-  if(mode==='clients'){
-    $('clientsPanel').style.display = ''; $('projectsPanel').style.display = 'none';
-  } else if(mode==='projects'){
-    $('clientsPanel').style.display = 'none'; $('projectsPanel').style.display = '';
-  } else {
-    $('clientsPanel').style.display = ''; $('projectsPanel').style.display = '';
+    projectForm.reset();
+    renderProjects();
   }
 
-  renderClientFilterOptions();
-  renderClientsTable(filteredClients);
-  renderProjectsTable(filteredProjects);
-  renderDashboardCards();
-}
+  // delegated handlers
+  function clientListHandler(e){
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    const id = btn.dataset.id;
+    if(btn.classList.contains('del-client')){
+      if(!confirm('Eliminar cliente y sus proyectos?')) return;
+      projects = projects.filter(p => p.clientId !== id);
+      clients = clients.filter(c => c.id !== id);
+      saveClients(); saveProjects();
+      renderClientOptions(); renderClients(); renderProjects();
+    } else if(btn.classList.contains('edit-client')){
+      const client = clients.find(c=>c.id===id);
+      if(!client) return;
+      const newName = prompt('Editar nombre del cliente', client.nombre);
+      if(newName === null) return;
+      client.nombre = newName.trim() || client.nombre;
+      const newTipo = prompt('Editar tipo (1 o 2)', client.tipo) || client.tipo;
+      client.tipo = (newTipo === '2') ? '2' : '1';
+      saveClients(); renderClientOptions(); renderClients(); renderProjects();
+    }
+  }
 
-/* ---------- Export / Import ---------- */
-exportClientsBtn.addEventListener('click', ()=>{
-  const blob = new Blob([JSON.stringify(clients, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'clients.json'; a.click(); URL.revokeObjectURL(url);
-});
-importClientsBtn.addEventListener('click', ()=> importClientsFile.click());
-importClientsFile.addEventListener('change', (ev)=>{
-  const file = ev.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ()=> {
-    try{
-      const data = JSON.parse(reader.result);
-      if(Array.isArray(data)){
-        clients = data.map(c=> ({...c, id: c.id || 'c'+Date.now()+Math.random()}));
-        saveClients(); renderAll();
-        alert('Clientes importados');
-      } else alert('Archivo inválido');
-    }catch(err){ alert('Error importando'); }
-  };
-  reader.readAsText(file);
-  ev.target.value='';
-});
+  function projectListHandler(e){
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    const id = btn.dataset.id;
+    if(btn.classList.contains('del-project')){
+      if(!confirm('Eliminar proyecto?')) return;
+      projects = projects.filter(p => p.id !== id);
+      saveProjects(); renderProjects();
+    } else if(btn.classList.contains('edit-project')){
+      const project = projects.find(p=>p.id===id);
+      if(!project) return;
+      const newName = prompt('Editar nombre proyecto', project.nombre);
+      if(newName === null) return;
+      project.nombre = newName.trim() || project.nombre;
+      const newAmount = prompt('Editar monto', project.amount);
+      if(newAmount !== null) project.amount = Number(newAmount) || project.amount;
+      const newStatus = prompt('Editar estatus', project.estatus);
+      if(newStatus !== null) project.estatus = newStatus || project.estatus;
+      const newProb = prompt('Editar probabilidad (%)', project.probabilidad);
+      if(newProb !== null) project.probabilidad = Number(newProb) || project.probabilidad;
+      saveProjects(); renderProjects();
+    }
+  }
 
-exportProjectsBtn.addEventListener('click', ()=>{
-  const blob = new Blob([JSON.stringify(projects, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'projects.json'; a.click(); URL.revokeObjectURL(url);
-});
-importProjectsBtn.addEventListener('click', ()=> importProjectsFile.click());
-importProjectsFile.addEventListener('change', (ev)=>{
-  const file = ev.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ()=> {
-    try{
-      const data = JSON.parse(reader.result);
-      if(Array.isArray(data)){
-        projects = data.map(p=> ({...p, id: p.id || 'p'+Date.now()+Math.random()}));
-        saveProjects(); renderAll();
-        alert('Proyectos importados');
-      } else alert('Archivo inválido');
-    }catch(err){ alert('Error importando'); }
-  };
-  reader.readAsText(file);
-  ev.target.value='';
-});
-
-/* ---------- UI Events ---------- */
-openAddClientBtn.addEventListener('click', ()=>{
-  clientNameInput.value = '';
-  clientTypeInput.value = '1';
-  $('modalClientTitle').innerText = 'Agregar Cliente';
-  // ensure original submit is restored
-  if(clientForm._backup) { clientForm.removeEventListener('submit', clientForm._backup); clientForm._backup=null; }
-  // attach backup basic submit
-  function basicSubmit(e){ e.preventDefault(); const name = clientNameInput.value.trim(); const tipo = clientTypeInput.value; if(!name) return alert('Nombre requerido'); const newClient = { id:'c'+Date.now(), nombre:name, tipo }; clients.push(newClient); saveClients(); renderAll(); hideModal(modalClient); clientForm.removeEventListener('submit', basicSubmit); clientForm._backup=null; }
-  clientForm._backup = basicSubmit;
-  clientForm.addEventListener('submit', basicSubmit);
-  showModal(modalClient);
-});
-cancelClientBtn.addEventListener('click', ()=> hideModal(modalClient));
-
-openAddProjectBtn.addEventListener('click', ()=>{
-  projectClientSelect.value = '';
-  projectNameInput.value = '';
-  projectMontoInput.value = '';
-  projectPosInput.value = '';
-  projectStatusSelect.value = 'activo';
-  projectProbInput.value = '100';
-  $('modalProjectTitle').innerText = 'Agregar Proyecto';
-  if(projectForm._backup) { projectForm.removeEventListener('submit', projectForm._backup); projectForm._backup=null; }
-  function basicSubmit(e){ e.preventDefault(); const clienteId = projectClientSelect.value; const nombre = projectNameInput.value.trim(); const monto = clamp(parseFloat(projectMontoInput.value)); if(!clienteId || !nombre) return alert('Cliente y nombre requeridos'); const n = { id:'p'+Date.now(), clienteId, nombre, monto, posiciones:clamp(parseInt(projectPosInput.value||0,10)), estatus:projectStatusSelect.value, probabilidad:clamp(parseFloat(projectProbInput.value||0),0), createdAt:new Date().toISOString() }; projects.push(n); saveProjects(); renderAll(); hideModal(modalProject); projectForm.removeEventListener('submit', basicSubmit); projectForm._backup=null; }
-  projectForm._backup = basicSubmit;
-  projectForm.addEventListener('submit', basicSubmit);
-  showModal(modalProject);
-});
-cancelProjectBtn.addEventListener('click', ()=> hideModal(modalProject));
-
-$('filterClient').addEventListener('change', applyFiltersAndSearch);
-$('filterStatus').addEventListener('change', applyFiltersAndSearch);
-$('viewMode').addEventListener('change', applyFiltersAndSearch);
-searchInput.addEventListener('input', ()=> { debounceApply(); });
-
-/* ---------- Debounce ---------- */
-let debounceTimer;
-function debounceApply(){ clearTimeout(debounceTimer); debounceTimer = setTimeout(()=> applyFiltersAndSearch(), 250); }
-
-/* ---------- Render all ---------- */
-function renderAll(){
-  renderClientFilterOptions();
-  applyFiltersAndSearch();
-  renderDashboardCards();
-}
-
-/* ---------- Initial render ---------- */
-renderAll();
-/* ==================================================================== */
-/* ===================== DASHBOARD Y KPI =============================== */
-/* ==================================================================== */
-
-let chartMontos = null;
-let chartEstatus = null;
-
-function actualizarDashboard() {
-    const clientes = JSON.parse(localStorage.getItem("clientes")) || [];
-    const proyectos = JSON.parse(localStorage.getItem("proyectos")) || [];
-
-    const totalClientes = clientes.length;
-    const totalProyectos = proyectos.length;
-
-    const ventas = proyectos
-        .filter(p => p.estatus === "ganado" || p.estatus === "cerrado")
-        .reduce((acc, p) => acc + Number(p.monto), 0);
-
-    const probable = proyectos
-        .filter(p => p.estatus === "proceso" || p.estatus === "negociación")
-        .reduce((acc, p) => acc + Number(p.monto), 0);
-
-    const ticket =
-        totalProyectos > 0 ? (ventas / totalProyectos).toFixed(2) : 0;
-
-    const conversion =
-        totalProyectos > 0
-            ? ((proyectos.filter(p => p.estatus === "ganado").length /
-                totalProyectos) *
-                100).toFixed(1)
-            : 0;
-
-    document.getElementById("kpiTotalClientes").textContent = totalClientes;
-    document.getElementById("kpiTotalProyectos").textContent = totalProyectos;
-    document.getElementById("kpiVentas").textContent = `$${ventas}`;
-    document.getElementById("kpiProbable").textContent = `$${probable}`;
-    document.getElementById("kpiTicket").textContent = `$${ticket}`;
-    document.getElementById("kpiConversion").textContent = `${conversion}%`;
-
-    graficarMontos(proyectos);
-    graficarEstatus(proyectos);
-}
-
-/* ==================================================================== */
-/* ===================== GRÁFICAS ===================================== */
-/* ==================================================================== */
-
-function graficarMontos(proyectos) {
-    const ctx = document.getElementById("chartMontos").getContext("2d");
-
-    const labels = proyectos.map(p => p.cliente);
-    const data = proyectos.map(p => Number(p.monto));
-
-    if (chartMontos) chartMontos.destroy();
-
-    chartMontos = new Chart(ctx, {
-        type: "bar",
-        data: {
-            labels,
-            datasets: [
-                {
-                    label: "Montos por Proyecto",
-                    data,
-                    backgroundColor: "#ffd600",
-                    borderColor: "#0d47a1",
-                    borderWidth: 1
-                }
-            ]
-        }
-    });
-}
-
-function graficarEstatus(proyectos) {
-    const ctx = document.getElementById("chartEstatus").getContext("2d");
-
-    const estatus = ["activo", "ganado", "cerrado", "proceso", "negociación", "perdido"];
-    const valores = estatus.map(e =>
-        proyectos.filter(p => p.estatus === e).length
-    );
-
-    if (chartEstatus) chartEstatus.destroy();
-
-    chartEstatus = new Chart(ctx, {
-        type: "pie",
-        data: {
-            labels: estatus,
-            datasets: [
-                {
-                    data: valores,
-                    backgroundColor: [
-                        "#0d47a1",
-                        "#42a5f5",
-                        "#90caf9",
-                        "#ffd600",
-                        "#ffb300",
-                        "#ff6f00"
-                    ]
-                }
-            ]
-        }
-    });
-}
-
-/* ==================================================================== */
-/* ===================== EXPORTAR A EXCEL ============================= */
-/* ==================================================================== */
-
-document.getElementById("exportExcel").addEventListener("click", () => {
-    const proyectos = JSON.parse(localStorage.getItem("proyectos")) || [];
-
-    const hoja = proyectos.map(p => ({
-        Cliente: p.cliente,
-        Monto: p.monto,
-        Descripción: p.descripcion,
-        Estatus: p.estatus,
-        Probabilidad: p.probabilidad,
-        Comisión: p.comision
-    }));
-
+  // export all to excel (multiple sheets)
+  function exportAllToExcel(){
+    if(typeof XLSX === 'undefined'){ alert('XLSX library no cargada'); return; }
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(hoja);
-    XLSX.utils.book_append_sheet(wb, ws, "Proyectos");
+    const clientsData = clients.map(c => ({ ID: c.id, Nombre: c.nombre, Tipo: c.tipo }));
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(clientsData), 'Clientes');
 
-    XLSX.writeFile(wb, "proyectos.xlsx");
-});
+    const projectsData = projects.map(p => {
+      const client = clients.find(c=>c.id===p.clientId) || { nombre:'Sin cliente', tipo:'1' };
+      return { ID:p.id, ClienteID:p.clientId, Cliente:client.nombre, Proyecto:p.nombre, Monto:p.amount, Estatus:p.estatus, Probabilidad:p.probabilidad, Comision: calcCommission(p) };
+    });
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(projectsData), 'Proyectos');
 
-/* ==================================================================== */
-/* === LLAMAR DASHBOARD CADA VEZ QUE CAMBIE LA INFO =================== */
-/* ==================================================================== */
+    const ventas = projects.filter(p=>p.estatus==='ganado' || p.estatus==='cerrado').reduce((s,p)=>s+Number(p.amount||0),0);
+    const kpi = [{ TotalClientes: clients.length, TotalProyectos: projects.length, VentasGanadas:ventas, TicketPromedio: projects.length ? (projects.reduce((s,p)=>s+Number(p.amount||0),0)/projects.length):0, FechaExport: new Date().toISOString() }];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(kpi), 'KPIs');
 
-actualizarDashboard();
+    XLSX.writeFile(wb, 'crm_proyectos_export.xlsx');
+  }
 
-/* ---------- On load, ensure panels visible per viewMode ---------- */
-applyFiltersAndSearch();
+  // init listeners (avoid dupes)
+  function initListeners(){
+    if(clientForm) { clientForm.removeEventListener('submit', handleAddClient); clientForm.addEventListener('submit', handleAddClient); }
+    if(projectForm) { projectForm.removeEventListener('submit', handleAddProject); projectForm.addEventListener('submit', handleAddProject); }
+    if(clientList) { clientList.removeEventListener('click', clientListHandler); clientList.addEventListener('click', clientListHandler); }
+    if(projectList) { projectList.removeEventListener('click', projectListHandler); projectList.addEventListener('click', projectListHandler); }
+    if(exportAllBtn) { exportAllBtn.removeEventListener('click', exportAllToExcel); exportAllBtn.addEventListener('click', exportAllToExcel); }
 
-/* ---------- End of file ---------- */
-// ------------------------------
-// EXPORTAR A EXCEL
-// ------------------------------
-function exportarExcel() {
-  // Crear libro
-  const wb = XLSX.utils.book_new();
+    // expose to window for dashboard to call if needed
+    window.exportAllToExcel = exportAllToExcel;
+    window.getCRMClients = () => JSON.parse(localStorage.getItem(KEY_CLIENTS) || '[]');
+    window.getCRMProjects = () => JSON.parse(localStorage.getItem(KEY_PROJECTS) || '[]');
+  }
 
-  // CLIENTES
-  const clientesData = clientes.map(c => ({
-    ID: c.idCliente,
-    Nombre: c.nombre,
-    Tipo: c.tipoCliente
-  }));
-  const clientesSheet = XLSX.utils.json_to_sheet(clientesData);
-  XLSX.utils.book_append_sheet(wb, clientesSheet, "Clientes");
+  // boot
+  function boot(){
+    renderClientOptions(); renderClients(); renderProjects(); initListeners();
+  }
 
-  // PROYECTOS
-  const proyectosData = proyectos.map(p => ({
-    ID: p.idProyecto,
-    Cliente: obtenerNombreCliente(p.idCliente),
-    Proyecto: p.nombre,
-    Monto: p.monto,
-    Estatus: p.estatus,
-    Probabilidad: p.probabilidad,
-    TipoCliente: p.tipoCliente,
-    Comision: p.comision
-  }));
-  const proyectosSheet = XLSX.utils.json_to_sheet(proyectosData);
-  XLSX.utils.book_append_sheet(wb, proyectosSheet, "Proyectos");
+  boot();
 
-  // KPIs
-  const kpiData = [{
-    TotalClientes: clientes.length,
-    TotalProyectos: proyectos.length,
-    VentasGanadas: proyectos.filter(p => p.estatus === "ganado").reduce((a,b)=>a+Number(b.monto),0),
-    Activos: proyectos.filter(p => p.estatus === "activo").length,
-    Probables: proyectos.filter(p => p.estatus === "proceso" || p.estatus === "negociacion").length,
-    Perdidos: proyectos.filter(p => p.estatus === "cancelado" || p.estatus === "perdido").length,
-    TicketPromedio: (proyectos.length>0) 
-      ? proyectos.reduce((a,b)=>a+Number(b.monto),0) / proyectos.length 
-      : 0
-  }];
+  // helper used in export
+  function calcCommission(p){
+    const client = clients.find(c=>c.id===p.clientId);
+    const pct = client && client.tipo==='2' ? 0.015 : 0.01;
+    return Number(p.amount||0) * pct;
+  }
 
-  const kpiSheet = XLSX.utils.json_to_sheet(kpiData);
-  XLSX.utils.book_append_sheet(wb, kpiSheet, "KPIs");
+  // listen storage changes (in case dashboard updates)
+  window.addEventListener('storage', ()=>{
+    clients = JSON.parse(localStorage.getItem(KEY_CLIENTS) || '[]');
+    projects = JSON.parse(localStorage.getItem(KEY_PROJECTS) || '[]');
+    renderClientOptions(); renderClients(); renderProjects();
+  });
 
-  // Descargar archivo
-  XLSX.writeFile(wb, "crm_proyectos.xlsx");
-}
+})(); // IIFE end
+
