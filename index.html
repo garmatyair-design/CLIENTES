@@ -8,118 +8,94 @@
 </head>
 <body>
 
-  <header style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:linear-gradient(90deg,#fff,#f8fbff);border-bottom:1px solid #e6eefc">
-    <div>
-      <h1 style="margin:0;color:#2563EB">CRM Proyectos</h1>
-      <p style="margin:2px 0 0;color:#6B7280;font-size:13px">Mini sistema — azul / amarillo</p>
+<header style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:linear-gradient(90deg,#fff,#f8fbff);border-bottom:1px solid #e6eefc">
+  <div>
+    <h1 style="margin:0;color:#2563EB">CRM Proyectos</h1>
+    <p style="margin:2px 0 0;color:#6B7280;font-size:13px">Mini sistema — azul / amarillo</p>
+  </div>
+  <div>
+    <a href="jdashboard.html" class="btn-primary">Ver Dashboard</a>
+  </div>
+</header>
+
+<main style="max-width:1400px;margin:25px auto;padding:0 16px">
+
+  <!-- ================================
+       BUSCADOR GLOBAL
+  ================================= -->
+  <section class="box">
+    <input id="globalSearch" type="text" placeholder="Buscar cliente o proyecto..." class="input-full" />
+  </section>
+
+  <!-- ================================
+       LAYOUT: 2 COLUMNAS
+  ================================= -->
+  <div style="display:flex;gap:20px;align-items:flex-start">
+
+    <!-- ================================
+         COLUMNA IZQUIERDA (CLIENTES)
+    ================================= -->
+    <div style="flex:1">
+
+      <!-- AGREGAR CLIENTE -->
+      <section class="box">
+        <h2>Agregar Cliente</h2>
+        <form id="clientForm">
+          <input type="text" id="clientName" placeholder="Nombre del cliente" class="input-full"/>
+          <select id="clientType" class="input-full">
+            <option value="1">Tipo 1 (1%)</option>
+            <option value="2">Tipo 2 (1.5%)</option>
+          </select>
+          <button class="btn-yellow" style="width:100%">Guardar Cliente</button>
+        </form>
+      </section>
+
+      <!-- LISTA CLIENTES -->
+      <section class="box">
+        <h2>Clientes</h2>
+        <input id="clientSearch" type="text" placeholder="Buscar cliente..." class="input-full" />
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Tipo</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="clientList"></tbody>
+        </table>
+      </section>
+
     </div>
 
-    <div>
-      <a href="dashboard.html" id="openDashboardBtn" style="display:inline-block;padding:8px 12px;border-radius:8px;background:#2563EB;color:#fff;text-decoration:none;font-weight:600">Ver Dashboard</a>
-    </div>
-  </header>
+    <!-- ================================
+         COLUMNA DERECHA (PROYECTOS)
+    ================================= -->
+    <div style="flex:2">
 
-  <main class="container" style="max-width:1200px;margin:22px auto;padding:0 18px">
+      <!-- AGREGAR PROYECTO -->
+      <section class="box">
+        <h2>Agregar Proyecto</h2>
+        <form id="projectForm">
 
-    <!-- --------------------------
-          AGREGAR CLIENTE
-    --------------------------- -->
-    <section style="background:white;padding:15px;margin-bottom:20px;border-radius:8px;box-shadow:0 0 5px #ccc">
-      <h2>Agregar Cliente</h2>
-      <form id="clientForm">
-        <input type="text" id="clientName" placeholder="Nombre del cliente" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc" />
-        <select id="clientType" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc">
-          <option value="1">Tipo 1 (1%)</option>
-          <option value="2">Tipo 2 (1.5%)</option>
-        </select>
-        <button type="submit" style="width:100%;padding:10px;background:#FBBF24;border:none;border-radius:6px;font-weight:700;cursor:pointer">Guardar Cliente</button>
-      </form>
-    </section>
+          <select id="projectClient" class="input-full">
+            <option value="">Selecciona un cliente</option>
+          </select>
 
-    <!-- --------------------------
-          AGREGAR PROYECTO
-    --------------------------- -->
-    <section style="background:white;padding:15px;margin-bottom:20px;border-radius:8px;box-shadow:0 0 5px #ccc">
-      <h2>Agregar Proyecto</h2>
-      <form id="projectForm">
+          <input type="text" id="projectName" placeholder="Nombre del proyecto" class="input-full" />
+          <input type="number" id="projectAmount" placeholder="Monto del proyecto" class="input-full" />
 
-        <select id="projectClient" required style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc">
-          <option value="">Selecciona un cliente</option>
-        </select>
+          <select id="projectStatus" class="input-full">
+            <option value="activo">Activo</option>
+            <option value="proceso">En proceso</option>
+            <option value="negociacion">Negociación</option>
+            <option value="ganado">Ganado</option>
+            <option value="cerrado">Cerrado</option>
+            <option value="cancelado">Cancelado</option>
+            <option value="perdido">Perdido</option>
+          </select>
 
-        <input type="text" id="projectName" placeholder="Nombre del proyecto" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc" />
+          <input type="number" id="projectProb" placeholder="Probabilidad (%)" value="100" min="0" max="100" class="input-full"/>
 
-        <input type="number" id="projectAmount" placeholder="Monto del proyecto" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc" />
-
-        <select id="projectStatus" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc">
-          <option value="activo">Activo</option>
-          <option value="proceso">En proceso</option>
-          <option value="negociacion">Negociación</option>
-          <option value="ganado">Ganado</option>
-          <option value="cerrado">Cerrado</option>
-          <option value="cancelado">Cancelado</option>
-          <option value="perdido">Perdido</option>
-        </select>
-
-        <input type="number" id="projectProb" placeholder="Probabilidad (%)" value="100" min="0" max="100" style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc" />
-
-        <!-- NUEVA CAJA DE COMENTARIOS -->
-        <textarea id="projectComments" placeholder="Comentarios del proyecto"
-        style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc"></textarea>
-
-        <!-- NUEVO: SUBIR PDF -->
-        <input type="file" id="projectPDF" accept="application/pdf"
-        style="width:100%;padding:8px;margin-bottom:10px;border-radius:6px;border:1px solid #e6eefc"/>
-
-        <button type="submit" style="width:100%;padding:10px;background:#2563EB;color:white;border:none;border-radius:6px;font-weight:700;cursor:pointer">Guardar Proyecto</button>
-      </form>
-    </section>
-
-    <!-- CLIENTES -->
-    <section style="background:white;padding:15px;margin-bottom:20px;border-radius:8px;box-shadow:0 0 5px #ccc">
-      <h2>Clientes</h2>
-      <table style="width:100%;border-collapse:collapse">
-        <thead>
-          <tr style="background:#f8fbff">
-            <th style="text-align:left;padding:10px">Cliente</th>
-            <th style="text-align:left;padding:10px">Tipo</th>
-            <th style="text-align:left;padding:10px">Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="clientList"></tbody>
-      </table>
-    </section>
-
-    <!-- PROYECTOS -->
-    <section style="background:white;padding:15px;margin-bottom:20px;border-radius:8px;box-shadow:0 0 5px #ccc">
-      <h2>Proyectos</h2>
-      <table style="width:100%;border-collapse:collapse">
-        <thead>
-          <tr style="background:#f8fbff">
-            <th style="padding:10px;text-align:left">Proyecto</th>
-            <th style="padding:10px;text-align:left">Cliente</th>
-            <th style="padding:10px;text-align:left">Monto</th>
-            <th style="padding:10px;text-align:left">Estatus</th>
-            <th style="padding:10px;text-align:left">Prob</th>
-            <th style="padding:10px;text-align:left">Comisión</th>
-
-            <th style="padding:10px;text-align:left">Comentarios</th>
-            <th style="padding:10px;text-align:left">PDF</th>
-
-            <th style="padding:10px;text-align:left">Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="projectList"></tbody>
-      </table>
-    </section>
-
-    <section style="text-align:right;margin-bottom:40px">
-      <button id="exportAllBtn" style="padding:10px 14px;background:#FBBF24;border:none;border-radius:6px;font-weight:700;cursor:pointer">Exportar todo a Excel</button>
-    </section>
-
-  </main>
-
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="js-app.js"></script>
-</body>
-</html>
+          <textarea id="projectComments" placeholder="Comentarios de
