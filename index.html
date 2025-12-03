@@ -108,7 +108,61 @@
         </table>
       </div>
     </section>
+<!-- DASHBOARD KPI -->
+<section id="dashboard" style="margin-top:40px;">
+    <h2>Dashboard de KPIs</h2>
 
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <h3>Total Clientes</h3>
+            <p id="kpiTotalClientes">0</p>
+        </div>
+
+        <div class="kpi-card">
+            <h3>Total Proyectos</h3>
+            <p id="kpiTotalProyectos">0</p>
+        </div>
+
+        <div class="kpi-card">
+            <h3>Ventas Ganadas</h3>
+            <p id="kpiVentas">0</p>
+        </div>
+
+        <div class="kpi-card">
+            <h3>Monto Probable</h3>
+            <p id="kpiProbable">0</p>
+        </div>
+
+        <div class="kpi-card">
+            <h3>Ticket Promedio</h3>
+            <p id="kpiTicket">0</p>
+        </div>
+
+        <div class="kpi-card">
+            <h3>% Conversión</h3>
+            <p id="kpiConversion">0%</p>
+        </div>
+    </div>
+
+    <hr>
+
+    <h3 style="margin-top:20px;">Gráficas</h3>
+    <canvas id="chartMontos" height="120"></canvas>
+    <canvas id="chartEstatus" height="120" style="margin-top:30px;"></canvas>
+
+    <br><br>
+    <button id="exportExcel" style="padding:10px 15px; background:#0d47a1; color:white; border:none;">
+        Exportar a Excel
+    </button>
+</section>
+
+<!-- Librería Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Librería SheetJS (Excel) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    
   </main>
 
   <!-- MODALES -->
