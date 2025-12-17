@@ -67,14 +67,14 @@
 
       const ctx = document.getElementById('d_status');
       if(chartStatus) chartStatus.destroy();
-      chartStatus = new Chart(ctx,{ type:'bar', data:{ labels:statuses.map(s=>s.toUpperCase()), datasets:[{ label:'Cantidad', data:counts, backgroundColor:'#2563EB' }, { label:'Monto', data:amounts, backgroundColor:'#FBBF24' }] }, options:{responsive:true,maintainAspectRatio:false} });
+      chartStatus = new Chart(ctx,{ type:'pie', data:{ labels:statuses.map(s=>s.toUpperCase()), datasets:[{ label:'Cantidad', data:counts, backgroundColor:'#2563EB' }, { label:'Monto', data:amounts, backgroundColor:'#FBBF24' }] }, options:{responsive:true,maintainAspectRatio:false} });
 
       const byClient = {};
       projects.forEach(p=> byClient[p.clientId] = (byClient[p.clientId]||0) + Number(p.amount||0));
       const arr = Object.entries(byClient).map(([id,total])=>({ id, total, name: clients.find(c=>c.id===id)?.nombre || 'Sin cliente' })).sort((a,b)=>b.total-a.total).slice(0,8);
       const ctx2 = document.getElementById('d_clients');
       if(chartClients) chartClients.destroy();
-      chartClients = new Chart(ctx2,{ type:'bar', data:{ labels:arr.map(a=>a.name), datasets:[{ label:'Monto', data:arr.map(a=>a.total), backgroundColor:'#2563EB' }] }, options:{responsive:true,maintainAspectRatio:false} });
+      chartClients = new Chart(ctx2,{ type:'pie', data:{ labels:arr.map(a=>a.name), datasets:[{ label:'Monto', data:arr.map(a=>a.total), backgroundColor:'#2563EB' }] }, options:{responsive:true,maintainAspectRatio:false} });
 
       // table summary
       const table = document.getElementById('tableSummary');
