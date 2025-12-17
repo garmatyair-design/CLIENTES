@@ -10,49 +10,66 @@
 </head>
 
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <h1>Dashboard</h1>
-      <div class="subtitle">KPIs, Gráficas y Export</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <a href="index.html" class="btn btn-outline">Volver</a>
-      <button id="dashExport" class="btn btn-yellow">Exportar todo</button>
-    </div>
-  </header>
+<header class="topbar">
+  <div class="brand">
+    <h1>Dashboard</h1>
+    <div class="subtitle">KPIs, Gráficas y Export</div>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a href="index.html" class="btn btn-outline">Volver</a>
+    <button id="dashExport" class="btn btn-yellow">Exportar todo</button>
+  </div>
+</header>
 
-  <main style="padding:20px;max-width:1200px;margin:20px auto">
-    <!-- KPIs -->
-    <section style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">
-      <div class="kpi"><div class="kpi-label">Total Clientes</div><div id="d_total_clients" class="kpi-value">0</div></div>
-      <div class="kpi"><div class="kpi-label">Total Proyectos</div><div id="d_total_projects" class="kpi-value">0</div></div>
-      <div class="kpi"><div class="kpi-label">Ventas Ganadas</div><div id="d_ventas" class="kpi-value">$0</div></div>
-    </section>
+<main style="padding:20px;max-width:1200px;margin:auto">
 
-    <!-- GRÁFICAS (ALTURA LIMITADA) -->
-    <section style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="card">
-        <h3>Montos por Estatus</h3>
-        <div style="height:320px">
-          <canvas id="d_status"></canvas>
-        </div>
-      </div>
+<!-- KPIs BASE -->
+<section style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+  <div class="kpi"><div>Total Clientes</div><div id="k_clients" class="kpi-value">0</div></div>
+  <div class="kpi"><div>Total Proyectos</div><div id="k_projects" class="kpi-value">0</div></div>
+  <div class="kpi"><div>Ventas Ganadas</div><div id="k_sales" class="kpi-value">$0</div></div>
+</section>
 
-      <div class="card">
-        <h3>Top clientes (por monto)</h3>
-        <div style="height:320px">
-          <canvas id="d_clients"></canvas>
-        </div>
-      </div>
-    </section>
+<!-- KPIs NUEVOS -->
+<section style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px">
+  <div class="kpi"><div>Ticket Promedio</div><div id="k_ticket" class="kpi-value">$0</div></div>
+  <div class="kpi"><div>% Conversión</div><div id="k_conversion" class="kpi-value">0%</div></div>
+  <div class="kpi"><div>Comisiones Totales</div><div id="k_commission_total" class="kpi-value">$0</div></div>
+  <div class="kpi"><div>Comisiones Ganadas</div><div id="k_commission_won" class="kpi-value">$0</div></div>
+</section>
 
-    <!-- TABLA -->
-    <section style="margin-top:12px" class="card">
-      <h3>Proyectos por Estatus (tabla)</h3>
-      <div id="tableSummary"></div>
-    </section>
-  </main>
+<!-- GRÁFICAS -->
+<section style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+  <div class="card">
+    <h3>Montos por Estatus</h3>
+    <div style="height:320px"><canvas id="chart_status"></canvas></div>
+  </div>
+  <div class="card">
+    <h3>Top Clientes</h3>
+    <div style="height:320px"><canvas id="chart_clients"></canvas></div>
+  </div>
+</section>
 
-  <script src="dashboard.js"></script>
+<!-- HISTÓRICO -->
+<section class="card" style="margin-top:12px">
+  <h3>Histórico de Ventas</h3>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <select id="yearFilter"></select>
+    <select id="monthFilter">
+      <option value="">Todos los meses</option>
+      <option value="0">Enero</option><option value="1">Febrero</option>
+      <option value="2">Marzo</option><option value="3">Abril</option>
+      <option value="4">Mayo</option><option value="5">Junio</option>
+      <option value="6">Julio</option><option value="7">Agosto</option>
+      <option value="8">Septiembre</option><option value="9">Octubre</option>
+      <option value="10">Noviembre</option><option value="11">Diciembre</option>
+    </select>
+  </div>
+  <div style="height:320px"><canvas id="chart_history"></canvas></div>
+</section>
+
+</main>
+
+<script src="dashboard.js"></script>
 </body>
 </html>
