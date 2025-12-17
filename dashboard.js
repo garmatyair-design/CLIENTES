@@ -1,145 +1,91 @@
 const KEY_CLIENTS = 'crm_clients_v3';
 const KEY_PROJECTS = 'crm_projects_v3';
 
-let clients = [];
-let projects = [];
+let clients = JSON.parse(localStorage.getItem(KEY_CLIENTS) || '[]');
+let projects = JSON.parse(localStorage.getItem(KEY_PROJECTS) || '[]');
 
-function loadData(){
-  clients = JSON.parse(localStorage.getItem(KEY_CLIENTS) || '[]');
-  projects = JSON.parse(localStorage.getItem(KEY_PROJECTS) || '[]');
-}
+function money(v){ return Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2}); }
 
-function renderKPIs(){
-  document.getElementById('d_total_clients').innerText = clients.length;
-  document.getElementById('d_total_projects').innerText = projects.length;
+function calcKPIs(){
+  document.getElementById('k_clients').innerText = clients.length;
+  document.getElementById('k_projects').innerText = projects.length;
 
-  const ventas = projects
-    .filter(p => p.estatus === 'ganado' || p.estatus === 'cerrado')
-    .reduce((s,p)=> s + Number(p.amount || 0), 0);
+  const won = projects.filter(p=>['ganado','cerrado'].includes(p.estatus));
+  const sales = won.reduce((s,p)=>s+Number(p.amount||0),0);
+  document.getElementById('k_sales').innerText = '$'+money(sales);
 
-  document.getElementById('d_ventas').innerText =
-    '$' + ventas.toLocaleString(undefined,{minimumFractionDigits:2});
-}
+  const ticket = projects.length ? sales / projects.length : 0;
+  document.getElementById('k_ticket').innerText = '$'+money(ticket);
 
-let chartStatus = null;
-let chartClients = null;
+  const conversion = projects.length ? (won.length / projects.length)*100 : 0;
+  document.getElementById('k_conversion').innerText = conversion.toFixed(1)+'%';
 
-function drawCharts(){
-  loadData();
-  renderKPIs();
-
-  const statuses = ['activo','proceso','negociacion','ganado','cerrado','cancelado','perdido'];
-  const amounts = statuses.map(
-    s => projects.filter(p=>p.estatus===s).reduce((a,p)=>a+Number(p.amount||0),0)
-  );
-
-  /* ===== GRÁFICA ESTATUS (PASTEL) ===== */
-  const ctx1 = document.getElementById('d_status');
-  if(chartStatus) chartStatus.destroy();
-
-  chartStatus = new Chart(ctx1,{
-    type:'pie',
-    data:{
-      labels:statuses.map(s=>s.toUpperCase()),
-      datasets:[{
-        data:amounts,
-        backgroundColor:[
-          '#2563EB','#1D4ED8','#60A5FA',
-          '#FBBF24','#F59E0B','#9CA3AF','#EF4444'
-        ]
-      }]
-    },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{ legend:{ position:'bottom' } }
-    }
-  });
-
-  /* ===== GRÁFICA CLIENTES (PASTEL) ===== */
-  const byClient = {};
+  let ct=0,cw=0;
   projects.forEach(p=>{
-    byClient[p.clientId] = (byClient[p.clientId]||0) + Number(p.amount||0);
+    const c = clients.find(x=>x.id===p.clientId);
+    const rate = c?.tipo==='2'?0.015:0.01;
+    const com = Number(p.amount||0)*rate;
+    ct+=com;
+    if(won.includes(p)) cw+=com;
   });
 
-  const arr = Object.entries(byClient)
-    .map(([id,total])=>({
-      name: clients.find(c=>c.id===id)?.nombre || 'Sin cliente',
-      total
-    }))
-    .sort((a,b)=>b.total-a.total)
-    .slice(0,8);
-
-  const ctx2 = document.getElementById('d_clients');
-  if(chartClients) chartClients.destroy();
-
-  chartClients = new Chart(ctx2,{
-    type:'pie',
-    data:{
-      labels:arr.map(a=>a.name),
-      datasets:[{
-        data:arr.map(a=>a.total),
-        backgroundColor:[
-          '#2563EB','#1D4ED8','#60A5FA',
-          '#93C5FD','#FBBF24','#F59E0B','#9CA3AF'
-        ]
-      }]
-    },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{ legend:{ position:'bottom' } }
-    }
-  });
-
-  /* ===== TABLA ===== */
-  const table = document.getElementById('tableSummary');
-  let html = `
-    <table style="width:100%;border-collapse:collapse">
-      <thead>
-        <tr>
-          <th>Estatus</th>
-          <th>Cantidad</th>
-          <th>Monto</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-
-  statuses.forEach(s=>{
-    const list = projects.filter(p=>p.estatus===s);
-    const total = list.reduce((a,p)=>a+Number(p.amount||0),0);
-    html += `
-      <tr>
-        <td style="padding:8px">${s}</td>
-        <td style="padding:8px">${list.length}</td>
-        <td style="padding:8px">$${total.toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-      </tr>
-    `;
-  });
-
-  html += '</tbody></table>';
-  table.innerHTML = html;
+  document.getElementById('k_commission_total').innerText='$'+money(ct);
+  document.getElementById('k_commission_won').innerText='$'+money(cw);
 }
 
-/* ===== EXPORT ===== */
-document.getElementById('dashExport').addEventListener('click', ()=>{
-  const wb = XLSX.utils.book_new();
+/* ===== GRÁFICAS ===== */
+function drawCharts(){
+  const statuses=['activo','proceso','negociacion','ganado','cerrado','cancelado','perdido'];
+  const amounts=statuses.map(s=>projects.filter(p=>p.estatus===s).reduce((a,p)=>a+Number(p.amount||0),0));
 
-  XLSX.utils.book_append_sheet(
-    wb,
-    XLSX.utils.json_to_sheet(clients),
-    'Clientes'
-  );
+  new Chart(chart_status,{
+    type:'pie',
+    data:{ labels:statuses, datasets:[{ data:amounts }] },
+    options:{responsive:true}
+  });
 
-  XLSX.utils.book_append_sheet(
-    wb,
-    XLSX.utils.json_to_sheet(projects),
-    'Proyectos'
-  );
+  const byClient={};
+  projects.forEach(p=>byClient[p.clientId]=(byClient[p.clientId]||0)+Number(p.amount||0));
+  new Chart(chart_clients,{
+    type:'pie',
+    data:{ labels:Object.keys(byClient).map(id=>clients.find(c=>c.id===id)?.nombre||''), datasets:[{ data:Object.values(byClient) }] }
+  });
+}
 
-  XLSX.writeFile(wb,'crm_dashboard_export.xlsx');
-});
+/* ===== HISTÓRICO ===== */
+function drawHistory(){
+  const years=[...new Set(projects.map(p=>new Date(p.openedAt).getFullYear()))];
+  yearFilter.innerHTML=years.map(y=>`<option>${y}</option>`).join('');
 
-window.addEventListener('storage', drawCharts);
+  const year=Number(yearFilter.value);
+  const month=monthFilter.value;
+
+  const map={};
+  projects.forEach(p=>{
+    if(!p.openedAt) return;
+    const d=new Date(p.openedAt);
+    if(d.getFullYear()!==year) return;
+    if(month!==''&&d.getMonth()!=month) return;
+    const k=d.getMonth()+1;
+    map[k]=(map[k]||0)+Number(p.amount||0);
+  });
+
+  new Chart(chart_history,{
+    type:'line',
+    data:{ labels:Object.keys(map), datasets:[{ data:Object.values(map), label:'Ventas' }] }
+  });
+}
+
+yearFilter.onchange=drawHistory;
+monthFilter.onchange=drawHistory;
+
+calcKPIs();
 drawCharts();
+drawHistory();
+
+document.getElementById('dashExport').onclick=()=>{
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(clients),'Clientes');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(projects),'Proyectos');
+  XLSX.writeFile(wb,'crm_dashboard.xlsx');
+};
