@@ -1,5 +1,32 @@
-const KEY_CLIENTS = 'crm_clients_v3';
-const KEY_PROJECTS = 'crm_projects_v3';
+// ===== MIGRACIÓN AUTOMÁTICA DE DATOS =====
+(function () {
+  const sources = ['crm_clients_v3', 'crm_clients_v2'];
+  let clients = [];
+
+  sources.forEach(k => {
+    const data = JSON.parse(localStorage.getItem(k) || '[]');
+    if (data.length) clients = data;
+  });
+
+  if (!localStorage.getItem('crm_clients') && clients.length) {
+    localStorage.setItem('crm_clients', JSON.stringify(clients));
+  }
+
+  const pSources = ['crm_projects_v3', 'crm_projects_v2'];
+  let projects = [];
+
+  pSources.forEach(k => {
+    const data = JSON.parse(localStorage.getItem(k) || '[]');
+    if (data.length) projects = data;
+  });
+
+  if (!localStorage.getItem('crm_projects') && projects.length) {
+    localStorage.setItem('crm_projects', JSON.stringify(projects));
+  }
+})();
+
+const KEY_CLIENTS = 'crm_clients';
+const KEY_PROJECTS = 'crm_projects';
 
 
 
