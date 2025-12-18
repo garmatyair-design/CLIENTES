@@ -1,5 +1,6 @@
-const KEY_CLIENTS = 'crm_clients';
-const KEY_PROJECTS = 'crm_projects';
+const KEY_CLIENTS = 'crm_clients_v3';
+const KEY_PROJECTS = 'crm_projects_v3';
+
 
 
 let clients = JSON.parse(localStorage.getItem(KEY_CLIENTS) || '[]');
