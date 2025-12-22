@@ -1,131 +1,161 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>CRM Proyectos</title>
-  <link rel="stylesheet" href="style.css" />
+
+  <link rel="stylesheet" href="style.css"/>
+
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-<header class="topbar">
-  <div>
-    <h1>CRM Proyectos</h1>
-    <span class="subtitle">Clientes · Proyectos · KPIs</span>
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="brand">
+      <h1>CRM Proyectos</h1>
+      <div class="subtitle">Gestión de clientes y proyectos</div>
+    </div>
+
+    <div class="top-controls">
+      <button id="openAddClient" class="btn btn-yellow">+ Cliente</button>
+      <button id="openAddProject" class="btn btn-blue">+ Proyecto</button>
+    </div>
+  </header>
+
+  <!-- MAIN LAYOUT -->
+  <main class="layout">
+
+    <!-- LEFT PANEL: CLIENTES -->
+    <section class="panel left-panel">
+      <div class="panel-head">
+        <h3>Clientes</h3>
+      </div>
+
+      <div id="clientList" class="list">
+        <!-- clientes renderizados por JS -->
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: PROYECTOS + KPIS -->
+    <section class="panel right-panel">
+
+      <!-- TITLE -->
+      <h2 id="projectsTitle">Proyectos</h2>
+
+      <!-- KPIS -->
+      <div class="grid-kpis">
+        <div class="kpi">
+          <div class="kpi-label">Monto Activo</div>
+          <div id="kpi_active" class="kpi-value">$0</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">Ventas Ganadas</div>
+          <div id="kpi_won" class="kpi-value">$0</div>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-label">Ticket Promedio</div>
+          <div id="kpi_ticket" class="kpi-value">$0</div>
+        </div>
+      </div>
+
+      <!-- CHART -->
+      <div class="chart-card" style="margin-top:12px">
+        <h4>Proyectos por estatus</h4>
+        <canvas id="chart_status"></canvas>
+      </div>
+
+      <!-- PROJECTS -->
+      <div id="projectsContainer" class="list-cards">
+        <!-- proyectos renderizados por JS -->
+      </div>
+
+    </section>
+  </main>
+
+  <!-- BACKDROP -->
+  <div id="modalBackdrop" class="modal-backdrop hidden"></div>
+
+  <!-- MODAL CLIENT -->
+  <div id="modalClient" class="modal hidden">
+    <div class="modal-body">
+      <h3>Agregar Cliente</h3>
+
+      <form id="clientForm" class="form">
+        <div class="form-row">
+          <label>Nombre</label>
+          <input id="clientName" required/>
+        </div>
+
+        <div class="form-row">
+          <label>Tipo</label>
+          <select id="clientType">
+            <option value="1">Tipo 1 (1%)</option>
+            <option value="2">Tipo 2 (1.5%)</option>
+          </select>
+        </div>
+
+        <div class="actions-row">
+          <button type="submit" class="btn btn-blue">Guardar</button>
+          <button type="button" id="cancelClient" class="btn btn-ghost">Cancelar</button>
+        </div>
+      </form>
+    </div>
   </div>
-  <a href="jdashboard.html" class="btn btn-outline">Ver Dashboard</a>
-</header>
 
-<main class="layout">
+  <!-- MODAL PROJECT -->
+  <div id="modalProject" class="modal hidden">
+    <div class="modal-body">
+      <h3>Agregar Proyecto</h3>
 
-  <!-- CLIENTES -->
-  <aside class="clients-panel">
-    <div class="panel-header">
-      <h2>Clientes</h2>
-      <button id="btnAddClient" class="btn btn-yellow">+ Cliente</button>
+      <form id="projectForm" class="form">
+        <div class="form-row">
+          <label>Cliente</label>
+          <select id="projectClientSelect" required></select>
+        </div>
+
+        <div class="form-row">
+          <label>Nombre del proyecto</label>
+          <input id="projectNameInput" required/>
+        </div>
+
+        <div class="form-row">
+          <label>Monto</label>
+          <input id="projectMontoInput" type="number" step="0.01" required/>
+        </div>
+
+        <div class="form-row">
+          <label>Estatus</label>
+          <select id="projectStatusSelect">
+            <option value="activo">Activo</option>
+            <option value="proceso">En proceso</option>
+            <option value="negociacion">Negociación</option>
+            <option value="ganado">Ganado</option>
+            <option value="cerrado">Cerrado</option>
+            <option value="cancelado">Cancelado</option>
+            <option value="perdido">Perdido</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label>Probabilidad (%)</label>
+          <input id="projectProbInput" type="number" min="0" max="100" value="100"/>
+        </div>
+
+        <div class="actions-row">
+          <button type="submit" class="btn btn-blue">Guardar</button>
+          <button type="button" id="cancelProject" class="btn btn-ghost">Cancelar</button>
+        </div>
+      </form>
     </div>
+  </div>
 
-    <input id="clientSearch" placeholder="Buscar cliente" class="input" />
-    <select id="clientTypeFilter" class="input">
-      <option value="">Todos</option>
-      <option value="1">Tipo 1</option>
-      <option value="2">Tipo 2</option>
-    </select>
+  <!-- SCRIPT -->
+  <script src="js-app.js"></script>
 
-    <div id="clientList" class="client-list"></div>
-  </aside>
-
-  <!-- PROYECTOS -->
-  <section class="projects-panel">
-    <h2 id="projectsTitle">Proyectos</h2>
-    <div id="selectedClientInfo" class="muted"></div>
-
-    <!-- KPIs CLIENTE -->
-    <div class="kpi-grid">
-      <div class="kpi"><span>Monto Activo</span><strong id="kpi_active">$0</strong></div>
-      <div class="kpi"><span>Monto Probable</span><strong id="kpi_probable">$0</strong></div>
-      <div class="kpi"><span>Monto Ganado</span><strong id="kpi_won">$0</strong></div>
-      <div class="kpi"><span>Ticket Promedio</span><strong id="kpi_ticket">$0</strong></div>
-      <div class="kpi"><span>Conversión</span><strong id="kpi_conversion">0%</strong></div>
-      <div class="kpi"><span>Cierre</span><strong id="kpi_close">0%</strong></div>
-    </div>
-
-    <!-- FILTROS -->
-    <div class="filters">
-      <select id="filterStatus" class="input">
-        <option value="">Todos los estatus</option>
-        <option value="activo">Activo</option>
-        <option value="proceso">Proceso</option>
-        <option value="negociacion">Negociación</option>
-        <option value="ganado">Ganado</option>
-        <option value="cerrado">Cerrado</option>
-        <option value="cancelado">Cancelado</option>
-        <option value="perdido">Perdido</option>
-      </select>
-      <input id="projectSearch" placeholder="Buscar proyecto" class="input" />
-      <button id="btnAddProject" class="btn btn-blue">+ Proyecto</button>
-    </div>
-
-    <!-- LISTA PROYECTOS -->
-    <div id="projectsContainer" class="projects-list"></div>
-
-    <!-- GRAFICAS -->
-    <div class="charts">
-      <canvas id="chart_status"></canvas>
-      <canvas id="chart_by_client"></canvas>
-    </div>
-  </section>
-
-</main>
-
-<!-- FORM PROYECTO -->
-<div id="projectFormCard" class="modal hidden">
-  <form id="projectForm" class="form">
-    <h3>Proyecto</h3>
-
-    <label>Cliente</label>
-    <select id="projectClientSelect"></select>
-
-    <label>Nombre</label>
-    <input id="projectName" required />
-
-    <label>Monto</label>
-    <input id="projectAmount" type="number" required />
-
-    <label>Estatus</label>
-    <select id="projectStatus">
-      <option value="activo">Activo</option>
-      <option value="proceso">Proceso</option>
-      <option value="negociacion">Negociación</option>
-      <option value="ganado">Ganado</option>
-      <option value="cerrado">Cerrado</option>
-      <option value="cancelado">Cancelado</option>
-      <option value="perdido">Perdido</option>
-    </select>
-
-    <label>Probabilidad (%)</label>
-    <input id="projectProb" type="number" value="100" />
-
-    <label>Fecha Apertura</label>
-    <input id="projectOpenDate" type="date" />
-
-    <label>Fecha Cierre / Ganado</label>
-    <input id="projectCloseDate" type="date" />
-
-    <label>Comentarios</label>
-    <textarea id="projectComments"></textarea>
-
-    <label>Adjuntar PDF</label>
-    <input id="projectPDF" type="file" accept="application/pdf" />
-
-    <div class="form-actions">
-      <button type="submit" class="btn btn-blue">Guardar</button>
-      <button type="button" id="cancelProjectBtn" class="btn btn-ghost">Cancelar</button>
-    </div>
-  </form>
-</div>
-
-<script src="js-app.js"></script>
 </body>
 </html>
