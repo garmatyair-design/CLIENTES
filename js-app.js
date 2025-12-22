@@ -105,3 +105,52 @@ function renderProjectClientOptions() {
     select.appendChild(opt);
   });
 }
+
+/* ====== ALTAS ====== */
+
+// Agregar cliente
+document.getElementById('btnAddClient')?.addEventListener('click', () => {
+  const nombre = prompt('Nombre del cliente');
+  if (!nombre) return;
+  const tipo = prompt('Tipo (1 o 2)', '1');
+  clients.push({
+    id: uid('c'),
+    nombre,
+    tipo: tipo === '2' ? '2' : '1'
+  });
+  saveClients();
+  renderClients();
+});
+
+// Agregar proyecto
+document.getElementById('projectForm')?.addEventListener('submit', e => {
+  e.preventDefault();
+
+  const clientId = document.getElementById('projectClientSelect').value;
+  const nombre = document.getElementById('projectName').value;
+  const amount = Number(document.getElementById('projectAmount').value);
+  const estatus = document.getElementById('projectStatus').value;
+  const prob = Number(document.getElementById('projectProb').value);
+  const openedAt = document.getElementById('projectOpenDate')?.value || null;
+  const closedAt = document.getElementById('projectCloseDate')?.value || null;
+
+  if (!clientId || !nombre || !amount) {
+    alert('Faltan datos');
+    return;
+  }
+
+  projects.push({
+    id: uid('p'),
+    clientId,
+    nombre,
+    amount,
+    estatus,
+    probabilidad: prob,
+    openedAt,
+    closedAt
+  });
+
+  saveProjects();
+  updateView();
+  e.target.reset();
+});
