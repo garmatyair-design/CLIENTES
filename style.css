@@ -73,6 +73,230 @@ a{text-decoration:none}
 
 .btn-outline{
   background:transparent;
-  border:1px solid v
-
+  border:1px solid var(--azul);
+  color:var(--azul)
 }
+
+.btn-ghost{
+  background:transparent;
+  border:1px solid #e6eefc
+}
+
+/* ================= LAYOUT ================= */
+.layout{
+  display:flex;
+  gap:20px;
+  padding:24px
+}
+
+.panel{
+  background:var(--card);
+  border-radius:12px;
+  padding:14px;
+  box-shadow:0 10px 30px rgba(37,99,235,0.04)
+}
+
+.left-panel{
+  width:360px;
+  display:flex;
+  flex-direction:column;
+  gap:12px
+}
+
+.right-panel{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:12px
+}
+
+/* ================= CLIENTES ================= */
+.panel-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center
+}
+
+.panel-controls{
+  display:flex;
+  gap:8px;
+  margin-top:8px
+}
+
+.input-sm{
+  padding:8px;
+  border-radius:8px;
+  border:1px solid #e6eefc
+}
+
+.list{
+  overflow:auto;
+  max-height:68vh;
+  padding-top:8px;
+  display:flex;
+  flex-direction:column;
+  gap:8px
+}
+
+.client-card{
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #eef4ff;
+  background:#fbfdff;
+  cursor:pointer;
+  display:flex;
+  justify-content:space-between;
+  align-items:center
+}
+
+.client-card.selected{
+  box-shadow:0 6px 18px rgba(37,99,235,0.08);
+  border-left:4px solid var(--azul)
+}
+
+/* ================= PROYECTOS ================= */
+.list-cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+  gap:12px
+}
+
+.card{
+  background:white;
+  padding:12px;
+  border-radius:8px;
+  border:1px solid #f1f5f9
+}
+
+/* ================= FORM ================= */
+.form-card{margin-bottom:6px}
+
+.form-row{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  margin-bottom:8px
+}
+
+.form-row.three{
+  display:flex;
+  gap:8px
+}
+
+.form-row.three > div{
+  flex:1
+}
+
+.actions-row{
+  display:flex;
+  gap:8px;
+  justify-content:flex-end
+}
+
+/* ================= KPIs ================= */
+.kpi{
+  padding:12px;
+  border-radius:8px;
+  background:#f8fbff;
+  border-left:5px solid var(--azul)
+}
+
+.grid-kpis{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-top:12px
+}
+
+.kpi .kpi-label{
+  font-size:13px;
+  color:var(--muted)
+}
+
+.kpi .kpi-value{
+  font-size:18px;
+  font-weight:700
+}
+
+/* ================= CHARTS ================= */
+.charts-row{
+  display:flex;
+  gap:12px;
+  margin-top:12px
+}
+
+.chart-card{
+  flex:1;
+  background:white;
+  padding:12px;
+  border-radius:8px;
+  box-shadow:0 6px 18px rgba(37,99,235,0.04)
+}
+
+/* ================= MISC ================= */
+.small{font-size:13px}
+.small.muted{color:var(--muted)}
+
+.top-controls .quick-kpis{
+  display:flex;
+  gap:10px
+}
+
+.quick-kpi{
+  background:#fff;
+  padding:8px 12px;
+  border-radius:8px;
+  border:1px solid #eef4ff
+}
+
+/* ================= MODAL ================= */
+.modal{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(2,6,23,0.45);
+  z-index:60
+}
+
+.modal-body{
+  background:white;
+  padding:18px;
+  border-radius:12px;
+  width:420px
+}
+
+/* ================= RESPONSIVE ================= */
+@media(max-width:980px){
+  .layout{
+    flex-direction:column;
+    padding:14px
+  }
+  .left-panel{
+    width:100%
+  }
+  .grid-kpis{
+    grid-template-columns:repeat(2,1fr)
+  }
+  .input-search{
+    width:180px
+  }
+}
+
+/* ================= AJUSTE TAMAÑO GRAFICAS ================= */
+
+.chart-card{
+  max-width: 420px;      /* evita que se estiren */
+  height: 300px;         /* altura moderada */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.chart-card canvas{
+  max-height: 220px !important;
+  max-width: 100% !important;
+  margin: 0 auto;
+}
+
