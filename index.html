@@ -4,158 +4,158 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>CRM Proyectos</title>
-
   <link rel="stylesheet" href="style.css"/>
-
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-  <!-- TOP BAR -->
-  <header class="topbar">
-    <div class="brand">
-      <h1>CRM Proyectos</h1>
-      <div class="subtitle">Gestión de clientes y proyectos</div>
-    </div>
-
-    <div class="top-controls">
-      <button id="openAddClient" class="btn btn-yellow">+ Cliente</button>
-      <button id="openAddProject" class="btn btn-blue">+ Proyecto</button>
-    </div>
-  </header>
-
-  <!-- MAIN LAYOUT -->
-  <main class="layout">
-
-    <!-- LEFT PANEL: CLIENTES -->
-    <section class="panel left-panel">
-      <div class="panel-head">
-        <h3>Clientes</h3>
-      </div>
-
-      <div id="clientList" class="list">
-        <!-- clientes renderizados por JS -->
-      </div>
-    </section>
-
-    <!-- RIGHT PANEL: PROYECTOS + KPIS -->
-    <section class="panel right-panel">
-
-      <!-- TITLE -->
-      <h2 id="projectsTitle">Proyectos</h2>
-
-      <!-- KPIS -->
-      <div class="grid-kpis">
-        <div class="kpi">
-          <div class="kpi-label">Monto Activo</div>
-          <div id="kpi_active" class="kpi-value">$0</div>
-        </div>
-
-        <div class="kpi">
-          <div class="kpi-label">Ventas Ganadas</div>
-          <div id="kpi_won" class="kpi-value">$0</div>
-        </div>
-
-        <div class="kpi">
-          <div class="kpi-label">Ticket Promedio</div>
-          <div id="kpi_ticket" class="kpi-value">$0</div>
-        </div>
-      </div>
-
-      <!-- CHART -->
-      <div class="chart-card" style="margin-top:12px">
-        <h4>Proyectos por estatus</h4>
-        <canvas id="chart_status"></canvas>
-      </div>
-
-      <!-- PROJECTS -->
-      <div id="projectsContainer" class="list-cards">
-        <!-- proyectos renderizados por JS -->
-      </div>
-
-    </section>
-  </main>
-
-  <!-- BACKDROP -->
-  <div id="modalBackdrop" class="modal-backdrop hidden"></div>
-
-  <!-- MODAL CLIENT -->
-  <div id="modalClient" class="modal hidden">
-    <div class="modal-body">
-      <h3>Agregar Cliente</h3>
-
-      <form id="clientForm" class="form">
-        <div class="form-row">
-          <label>Nombre</label>
-          <input id="clientName" required/>
-        </div>
-
-        <div class="form-row">
-          <label>Tipo</label>
-          <select id="clientType">
-            <option value="1">Tipo 1 (1%)</option>
-            <option value="2">Tipo 2 (1.5%)</option>
-          </select>
-        </div>
-
-        <div class="actions-row">
-          <button type="submit" class="btn btn-blue">Guardar</button>
-          <button type="button" id="cancelClient" class="btn btn-ghost">Cancelar</button>
-        </div>
-      </form>
-    </div>
+<header class="topbar">
+  <div class="brand">
+    <h1>CRM Proyectos</h1>
+    <div class="subtitle">Clientes · Proyectos · KPIs</div>
   </div>
 
-  <!-- MODAL PROJECT -->
-  <div id="modalProject" class="modal hidden">
-    <div class="modal-body">
-      <h3>Agregar Proyecto</h3>
+  <div class="top-controls">
+    <input id="globalSearch" class="input-search" placeholder="Buscar cliente o proyecto"/>
+    <button id="openAddClient" class="btn btn-yellow">+ Cliente</button>
+    <button id="openAddProject" class="btn btn-blue">+ Proyecto</button>
+    <a href="jdashboard.html" class="btn btn-outline">Ver Dashboard</a>
+  </div>
+</header>
 
-      <form id="projectForm" class="form">
-        <div class="form-row">
-          <label>Cliente</label>
-          <select id="projectClientSelect" required></select>
-        </div>
+<main class="layout">
 
-        <div class="form-row">
-          <label>Nombre del proyecto</label>
-          <input id="projectNameInput" required/>
-        </div>
+  <!-- CLIENTES -->
+  <section class="panel left-panel">
+    <div class="panel-head">
+      <strong>Clientes</strong>
+    </div>
 
-        <div class="form-row">
-          <label>Monto</label>
-          <input id="projectMontoInput" type="number" step="0.01" required/>
-        </div>
+    <div class="panel-controls">
+      <input id="clientSearch" class="input-sm" placeholder="Buscar cliente"/>
+      <select id="clientTypeFilter" class="input-sm">
+        <option value="">Todos</option>
+        <option value="1">Tipo 1</option>
+        <option value="2">Tipo 2</option>
+      </select>
+    </div>
 
-        <div class="form-row">
-          <label>Estatus</label>
-          <select id="projectStatusSelect">
-            <option value="activo">Activo</option>
-            <option value="proceso">En proceso</option>
-            <option value="negociacion">Negociación</option>
-            <option value="ganado">Ganado</option>
-            <option value="cerrado">Cerrado</option>
-            <option value="cancelado">Cancelado</option>
-            <option value="perdido">Perdido</option>
-          </select>
-        </div>
+    <div id="clientList" class="list"></div>
+  </section>
 
-        <div class="form-row">
-          <label>Probabilidad (%)</label>
-          <input id="projectProbInput" type="number" min="0" max="100" value="100"/>
-        </div>
+  <!-- PROYECTOS -->
+  <section class="panel right-panel">
+    <div class="panel-head">
+      <strong id="projectsTitle">Proyectos</strong>
+      <span id="selectedClientInfo" class="small muted"></span>
+    </div>
 
-        <div class="actions-row">
-          <button type="submit" class="btn btn-blue">Guardar</button>
-          <button type="button" id="cancelProject" class="btn btn-ghost">Cancelar</button>
-        </div>
-      </form>
+    <!-- KPIs -->
+    <div class="grid-kpis">
+      <div class="kpi">
+        <div class="kpi-label">Monto Activo</div>
+        <div id="kpi_active" class="kpi-value">$0</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Monto Probable</div>
+        <div id="kpi_probable" class="kpi-value">$0</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Monto Ganado</div>
+        <div id="kpi_won" class="kpi-value">$0</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Ticket Promedio</div>
+        <div id="kpi_ticket" class="kpi-value">$0</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Conversión</div>
+        <div id="kpi_conversion" class="kpi-value">0%</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Cierre</div>
+        <div id="kpi_close" class="kpi-value">0%</div>
+      </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="panel-controls">
+      <select id="filterStatus" class="input-sm">
+        <option value="">Todos los estatus</option>
+        <option value="activo">Activo</option>
+        <option value="proceso">Proceso</option>
+        <option value="negociacion">Negociación</option>
+        <option value="ganado">Ganado</option>
+        <option value="cerrado">Cerrado</option>
+        <option value="cancelado">Cancelado</option>
+        <option value="perdido">Perdido</option>
+      </select>
+
+      <input id="projectSearch" class="input-sm" placeholder="Buscar proyecto"/>
+    </div>
+
+    <!-- PROYECTOS LISTA -->
+    <div id="projectsContainer" class="list-cards"></div>
+
+    <!-- GRÁFICAS -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <canvas id="chart_status" height="200"></canvas>
+      </div>
+      <div class="chart-card">
+        <canvas id="chart_by_client" height="200"></canvas>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<!-- MODAL CLIENTE -->
+<div id="modalClient" class="modal hidden">
+  <div class="modal-body">
+    <h3>Nuevo Cliente</h3>
+    <input id="clientName" class="input-sm" placeholder="Nombre"/>
+    <select id="clientType" class="input-sm">
+      <option value="1">Tipo 1 (1%)</option>
+      <option value="2">Tipo 2 (1.5%)</option>
+    </select>
+    <div class="actions-row">
+      <button id="saveClientBtn" class="btn btn-blue">Guardar</button>
+      <button id="cancelClientBtn" class="btn btn-ghost">Cancelar</button>
     </div>
   </div>
+</div>
 
-  <!-- SCRIPT -->
-  <script src="js-app.js"></script>
+<!-- MODAL PROYECTO -->
+<div id="modalProject" class="modal hidden">
+  <div class="modal-body">
+    <h3>Nuevo Proyecto</h3>
 
+    <select id="projectClientSelect" class="input-sm"></select>
+    <input id="projectName" class="input-sm" placeholder="Nombre proyecto"/>
+    <input id="projectAmount" class="input-sm" type="number" placeholder="Monto"/>
+    <select id="projectStatus" class="input-sm">
+      <option value="activo">Activo</option>
+      <option value="proceso">Proceso</option>
+      <option value="negociacion">Negociación</option>
+      <option value="ganado">Ganado</option>
+      <option value="cerrado">Cerrado</option>
+    </select>
+    <input id="projectProb" class="input-sm" type="number" placeholder="Probabilidad %"/>
+
+    <input id="projectOpenedAt" class="input-sm" type="date"/>
+    <input id="projectClosedAt" class="input-sm" type="date"/>
+
+    <textarea id="projectComments" class="input-sm" placeholder="Comentarios"></textarea>
+    <input id="projectPDF" type="file"/>
+
+    <div class="actions-row">
+      <button id="saveProjectBtn" class="btn btn-blue">Guardar</button>
+      <button id="cancelProjectBtn" class="btn btn-ghost">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script src="js-app.js"></script>
 </body>
 </html>
