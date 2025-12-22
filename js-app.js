@@ -57,6 +57,20 @@ function renderProjects(list){
     projectsContainer.appendChild(div);
   });
 }
+function renderProjectClientOptions() {
+  const select = document.getElementById("projectClientSelect");
+  if (!select) return;
+
+  select.innerHTML = `<option value="">Selecciona un cliente</option>`;
+
+  clients.forEach(client => {
+    const option = document.createElement("option");
+    option.value = client.id;
+    option.textContent = client.name;
+    select.appendChild(option);
+  });
+}
+
 
 /* KPIs */
 function updateKPIs(list){
