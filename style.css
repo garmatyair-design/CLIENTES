@@ -249,6 +249,23 @@ a{text-decoration:none}
   border:1px solid #eef4ff
 }
 
+
+/* ================= RESPONSIVE ================= */
+@media(max-width:980px){
+  .layout{
+    flex-direction:column;
+    padding:14px
+  }
+  .left-panel{
+    width:100%
+  }
+  .grid-kpis{
+    grid-template-columns:repeat(2,1fr)
+  }
+  .input-search{
+    width:180px
+  }
+}
 /* ===== MODALES CORREGIDOS ===== */
 
 .modal-backdrop {
@@ -282,22 +299,5 @@ a{text-decoration:none}
   box-shadow: 0 25px 60px rgba(0,0,0,0.25);
 }
 
-
-/* ================= RESPONSIVE ================= */
-@media(max-width:980px){
-  .layout{
-    flex-direction:column;
-    padding:14px
-  }
-  .left-panel{
-    width:100%
-  }
-  .grid-kpis{
-    grid-template-columns:repeat(2,1fr)
-  }
-  .input-search{
-    width:180px
-  }
-}
 
 
