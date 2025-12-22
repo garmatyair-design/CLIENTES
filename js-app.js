@@ -93,3 +93,15 @@ function updateView(){
 
 /* INIT */
 renderClients();
+function renderProjectClientOptions() {
+  const select = document.getElementById('projectClientSelect');
+  if (!select) return;
+
+  select.innerHTML = '<option value="">Selecciona un cliente</option>';
+  clients.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name;
+    select.appendChild(opt);
+  });
+}
