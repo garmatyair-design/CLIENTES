@@ -257,7 +257,7 @@ a{text-decoration:none}
     padding:14px
   }
   .left-panel{
-    width:50%
+    width:100%
   }
   .grid-kpis{
     grid-template-columns:repeat(2,1fr)
