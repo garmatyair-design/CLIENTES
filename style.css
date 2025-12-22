@@ -97,17 +97,17 @@ a{text-decoration:none}
 }
 
 .left-panel{
-  width:360px;
+  width:500px;
   display:flex;
   flex-direction:column;
-  gap:12px
+  gap:60px
 }
 
 .right-panel{
   flex:1;
   display:flex;
   flex-direction:column;
-  gap:12px
+  gap:70px
 }
 
 /* ================= CLIENTES ================= */
