@@ -74,18 +74,5 @@ a{text-decoration:none}
 .btn-outline{
   background:transparent;
   border:1px solid v
-/* ================= AJUSTE TAMAÑO GRAFICAS ================= */
 
-.chart-card{
-  max-width: 420px;      /* evita que se estiren */
-  height: 300px;         /* altura moderada */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.chart-card canvas{
-  max-height: 220px !important;
-  max-width: 100% !important;
-  margin: 0 auto;
 }
